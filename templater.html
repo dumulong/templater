@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Templater</title>
 <style> 
+
 body {
     line-height: 1.3;
     margin-left: 20px;
@@ -14,6 +15,14 @@ body {
 }
 
 button { margin: 3px 10px; }
+
+.toc {
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid black;
+    margin-right: 10px;
+    padding: 0 10px;
+}
 
 .more > button {
     margin: 0;
@@ -53,6 +62,11 @@ button { margin: 3px 10px; }
 
 .hidden { display: none; }
 
+.spacy {
+    display: flex;
+    flex-direction: row;
+}
+
 .spacy > div { padding-bottom: 20px; }
 
 </style>
@@ -69,7 +83,13 @@ String.prototype.supplant = function (o = {}) {
 };
 </script>
 
+<script>
+const templaterData = {};
+</script>
+
 <script src="templater_data.js"></script>
+<script src="templater_data2.js"></script>
+
 </head>
 <body>
 
@@ -100,6 +120,7 @@ String.prototype.supplant = function (o = {}) {
 <!—- ============= -->
 
 <div class="spacy">
+    <div class="toc"></div>
     <div class="link-list"></div>
 </div>
 
@@ -202,16 +223,6 @@ function clip (elementId) {
     console.log ("copied!");
 }
 
-const readData = (data) => {
-    const list = []
-    parseObj(data, list);
-    list.forEach((item, ndx) => {
-        processReplace(item, ndx, list);
-    })
-    const displayList = displayObj (data, []);
-    linkListDiv.innerHTML = displayList.join("");
-}
-
 // If the link has values within brackets, the user will be prompt to enter them
 const openLink = (id, link) => {
     const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
@@ -228,7 +239,25 @@ const openLink = (id, link) => {
     window.open (link, `link_${id}`);
 }
 
-readData (data);
+const displayToc = () => {
+    const tocDiv = document.querySelector ('.toc');
+    const tab = `<button onclick="showData('{item}')">{item}</button>`;
+    tocDiv.innerHTML = Object.keys(templaterData).map(item => tab.supplant({item})).join("");
+}
+
+const showData = (tab) => {
+    if(!tab) { tab = Object.keys(templaterData)[0] };
+    const list = [];
+    parseObj(templaterData[tab], list);
+    list.forEach((item, ndx) => {
+        processReplace(item, ndx, list);
+    })
+    const displayList = displayObj (templaterData[tab], []);
+    linkListDiv.innerHTML = displayList.join("");
+}
+
+displayToc();
+showData ();
 
 </script>
 </body> 
