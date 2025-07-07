@@ -1,6 +1,10 @@
 templaterData["Other data"] = {
-    "test again" : {
-        what : "Example for the test1 link, when prompted, enter 'feed/history'",
-        "test1" : "https://www.youtube.com/[what]"
+    "Test again" : {
+        what : "Example of a link with replacement and placeholder",
+        instructions : "After clicking the link, enter 'history'",
+        hidden : {
+            root : "feed"
+        },
+        "link" : "https://www.youtube.com/{root}/[what]"
     }
 }

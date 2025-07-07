@@ -1,15 +1,20 @@
 templaterData["Test Data"] = {
-    "test" : {
-        what : "Example for the test1 link, when prompted, enter 'feed/history'",
-        "test1" : "https://www.youtube.com/[what]"
+    "Link placeholder example" : {
+        Example : "Example for the test1 link.  Click the link and when prompted, enter 'feed/history'",
+        "Test link" : "https://www.youtube.com/[what]"
     },
-    "test2" : {
+    "Link replacement example" : {
         "level" : "first level",
         "another level" : {
+            tree : "of life",
             hidden : {
-                tree : "of life"
+                a : "a",
+                b : "b",
+                c : "c",
+                d : "d",
+                e : "e",
             },
-            "my thing" : "Is the tree {tree}"
+            "my thing" : "Is the tree {tree} {a}-{b}-{c}-{d}-{e}"
         }
     }
 }

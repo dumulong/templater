@@ -158,6 +158,7 @@ const templaterData = {};
                     <button onclick="setLS()">Set</button>
                     <button onclick="copyLS()">Copy</button>
                     <button onclick="clearLS()">Clear</button>
+                    <button onclick="deleteLS()">Delete</button>
                 </div>
                 <textarea id="lsData"></textarea>
             </div>
@@ -211,6 +212,15 @@ const parseObj = (item, list) => {
     list.push (item)
 }
 
+const processReplace = (item, ndx, list) => {
+    const keys = Object.keys(item);
+    keys.forEach ( key => {
+        if (typeof (item[key]) !== 'object') {
+            item [key] = replace (item[key], ndx, list);
+        }
+    })
+}
+
 const replace = (value, ndx, list) => {
     const maxRetry = 10;
     let retry = 0;
@@ -220,15 +230,6 @@ const replace = (value, ndx, list) => {
         }
     }
     return value;
-}
-
-const processReplace = (item, ndx, list) => {
-    const keys = Object.keys(item);
-    keys.forEach ( key => {
-        if (typeof (item[key]) !== 'object') {
-            item [key] = replace (item[key], ndx, list);
-        }
-    })
 }
 
 const displayObj = (obj, list, firstTime = true) => {
@@ -273,11 +274,15 @@ const openLink = (id, link) => {
     const matchArray = Array.from( link.matchAll (varRegExp) ).map (x => x [0]); // Only take the "matched" variable name
     const matchSet = new Set (matchArray); // Make the variable name unique
     for (const variable of matchSet) {
-        const defaultVal = localStorage.getItem (variable);
-        let replaceBy = prompt(variable, defaultVal === null ? "" : defaultVal);
+        //const defaultVal = localStorage.getItem (variable);
+        const strLS = localStorage.getItem ("templaterLS") || "{}";
+        const dataLS = JSON.parse(strLS);
+        const defaultVal = dataLS[variable];
+        let replaceBy = prompt(variable, defaultVal === undefined ? "" : defaultVal);
         if (replaceBy === null) { return; } // Exit on "cancel"
         link = link.replaceAll (variable, replaceBy);
-        localStorage.setItem (variable, replaceBy);
+        dataLS[variable] = replaceBy;
+        localStorage.setItem ("templaterLS", JSON.stringify(dataLS));
     }
     window.open (link, `link_${id}`);
 }
@@ -294,6 +299,12 @@ const getLS = () => {
 const setLS = () => {
     const lsDataInput = document.querySelector('#lsData');
     localStorage.setItem("templaterLS", lsDataInput.value);
+}
+
+const deleteLS = () => {
+    const lsDataInput = document.querySelector('#lsData');
+    localStorage.removeItem("templaterLS");
+    clearLS();
 }
 
 const clearLS = () => {
