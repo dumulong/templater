@@ -16,6 +16,16 @@ body {
 
 button { margin: 3px 10px; }
 
+.link-list {
+    margin-bottom: 30px;
+}
+
+#lsData {
+    width: 300px;
+    height: 150px;
+    padding: 12px;
+}
+
 .toc {
     display: flex;
     flex-direction: column;
@@ -60,14 +70,31 @@ button { margin: 3px 10px; }
     font-weight: 800;
 }
 
+.link-button {
+  display: inline; 
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: silver;
+}
+
+.ls-button-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.ls-div {
+    display: flex;
+    flex-direction: row;    
+}
+
 .hidden { display: none; }
 
 .spacy {
     display: flex;
     flex-direction: row;
 }
-
-.spacy > div { padding-bottom: 20px; }
 
 </style>
 
@@ -121,8 +148,24 @@ const templaterData = {};
 
 <div class="spacy">
     <div class="toc"></div>
-    <div class="link-list"></div>
+    <div>
+        <div class="link-list"></div>
+        <button class="link-button" onclick="toggleLS()">Local Storage</button>
+        <div class="local-storage hidden">
+            <div class="ls-div">
+                <div class="ls-button-list">
+                    <button onclick="getLS()">Get</button>
+                    <button onclick="setLS()">Set</button>
+                    <button onclick="copyLS()">Copy</button>
+                    <button onclick="clearLS()">Clear</button>
+                </div>
+                <textarea id="lsData"></textarea>
+            </div>
+        </div>
+    </div>
 </div>
+
+
 
 <script>
 const linkListDiv = document.querySelector(".link-list");
@@ -237,6 +280,30 @@ const openLink = (id, link) => {
         localStorage.setItem (variable, replaceBy);
     }
     window.open (link, `link_${id}`);
+}
+
+const toggleLS = () => {
+    const ls = document.querySelector ('.local-storage');
+    ls.classList.toggle("hidden");
+}
+
+const getLS = () => {
+    document.querySelector ('#lsData').value = localStorage.getItem("templaterLS");
+}
+
+const setLS = () => {
+    const lsDataInput = document.querySelector('#lsData');
+    localStorage.setItem("templaterLS", lsDataInput.value);
+}
+
+const clearLS = () => {
+    document.querySelector('#lsData').value = "";
+}
+
+const copyLS = () => {
+    const lsDataInput = document.querySelector('#lsData');
+    navigator.clipboard.writeText (lsDataInput.value);
+    console.log ("copied!");
 }
 
 const displayToc = () => {
