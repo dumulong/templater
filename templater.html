@@ -342,7 +342,7 @@ const showData = (tab) => {
 const search = (data, searchFor) => {
     const result = {};
     for (prop in data) {
-        if (typeof (data[prop]) == 'string') {
+        if (typeof (data[prop]) === 'string') {
             if (prop.includes(searchFor) || data[prop].includes(searchFor)) {
                 result[prop] = data[prop];
             }
