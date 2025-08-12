@@ -263,7 +263,6 @@ const toggleFolder = (folderId) => {
 
 const getValue = (id, link) => {
     const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
-    const variable = link.matchAll();
     const matchArray = Array.from( link.matchAll (varRegExp) ).map (x => x [0]); // Only take the "matched" variable name
     const matchSet = new Set (matchArray); // Make the variable name unique
     for (const variable of matchSet) {
@@ -271,7 +270,7 @@ const getValue = (id, link) => {
         const dataLS = JSON.parse(strLS);
         const defaultVal = dataLS[variable];
         let replaceBy = prompt(variable, defaultVal === undefined ? "" : defaultVal);
-        if (replaceBy === null) { return; } // Exit on "cancel"
+        if (replaceBy === null) { return false; } // Exit on "cancel"
         link = link.replaceAll (variable, replaceBy);
         dataLS[variable] = replaceBy;
         localStorage.setItem ("templaterLS", JSON.stringify(dataLS));
@@ -281,16 +280,16 @@ const getValue = (id, link) => {
 
 const clip = (elementId) => {
     const element = document.querySelector (`#${elementId}`);
-    const fullLink = getValuee (elementId, element.dataset.value); //NOTE: We used a data attribute to avoid parsing issues... 
+    const fullLink = getValue (elementId, element.dataset.value); //NOTE: We used a data attribute to avoid parsing issues... 
     if (!fullLink) { return; }
     navigator.clipboard.writeText (fullLink); 
     console.log ("copied!");
 }
 
 const openLink = (id, link) => {
-    const fullLink = getValuee (id, link);
+    const fullLink = getValue (id, link);
     if (!fullLink) { return; }
-    window.open (link, `link_${id}`);
+    window.open (fullLink, `link_${id}`);
 }
 
 const toggleLS = () => {
@@ -343,7 +342,7 @@ const showData = (tab) => {
 const search = (data, searchFor) => {
     const result = {};
     for (prop in data) {
-        if (typeof (data[prop]) =='string') {
+        if (typeof (data[prop]) == 'string') {
             if (prop.includes(searchFor) || data[prop].includes(searchFor)) {
                 result[prop] = data[prop];
             }
