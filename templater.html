@@ -182,7 +182,7 @@ const createUID = () => {
     });
 }
 
-function augmentItem (key, value) {
+const augmentItem = (key, value) => {
     const MAX = 60;
     const list = [];
     const item = { id : createUID(), label: key };
@@ -261,20 +261,12 @@ const toggleFolder = (folderId) => {
     folder.classList.toggle("hidden");
 }
 
-function clip (elementId) {
-    const element = document.querySelector (`#${elementId}`);
-    navigator.clipboard.writeText (element.dataset.value); //NOTE: We used a data attribute to avoid parsing issues... 
-    console.log ("copied!");
-}
-
-// If the link has values within brackets, the user will be prompt to enter them
-const openLink = (id, link) => {
+const getValue = (id, link) => {
     const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
     const variable = link.matchAll();
     const matchArray = Array.from( link.matchAll (varRegExp) ).map (x => x [0]); // Only take the "matched" variable name
     const matchSet = new Set (matchArray); // Make the variable name unique
     for (const variable of matchSet) {
-        //const defaultVal = localStorage.getItem (variable);
         const strLS = localStorage.getItem ("templaterLS") || "{}";
         const dataLS = JSON.parse(strLS);
         const defaultVal = dataLS[variable];
@@ -284,6 +276,20 @@ const openLink = (id, link) => {
         dataLS[variable] = replaceBy;
         localStorage.setItem ("templaterLS", JSON.stringify(dataLS));
     }
+    return link;
+}
+
+const clip = (elementId) => {
+    const element = document.querySelector (`#${elementId}`);
+    const fullLink = getValuee (elementId, element.dataset.value); //NOTE: We used a data attribute to avoid parsing issues... 
+    if (!fullLink) { return; }
+    navigator.clipboard.writeText (fullLink); 
+    console.log ("copied!");
+}
+
+const openLink = (id, link) => {
+    const fullLink = getValuee (id, link);
+    if (!fullLink) { return; }
     window.open (link, `link_${id}`);
 }
 
@@ -332,6 +338,28 @@ const showData = (tab) => {
     })
     const displayList = displayObj (templaterData[tab], []);
     linkListDiv.innerHTML = displayList.join("");
+}
+
+const search = (data, searchFor) => {
+    const result = {};
+    for (prop in data) {
+        if (typeof (data[prop]) =='string') {
+            if (prop.includes(searchFor) || data[prop].includes(searchFor)) {
+                result[prop] = data[prop];
+            }
+        } else {
+            if (prop.includes(searchFor)) {
+                result[prop] = data[prop];
+            } else {
+                const currProp = prop;
+                const local = search (data[prop], searchFor)
+                if (Object.keys(local).length > 0) {
+                    result[currProp] = local;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 displayToc();
