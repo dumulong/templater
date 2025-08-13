@@ -356,14 +356,15 @@ const showData = (data) => {
 }
 
 const search = (data, searchFor) => {
+    const pattern = new RegExp(searchFor, "i");
     const result = {};
     for (prop in data) {
         if (typeof (data[prop]) === 'string') {
-            if (prop.includes(searchFor) || data[prop].includes(searchFor)) {
+            if (pattern.test(prop) || pattern.test(data[prop])) {
                 result[prop] = data[prop];
             }
         } else {
-            if (prop.includes(searchFor)) {
+            if (pattern.test(prop)) {
                 result[prop] = data[prop];
             } else {
                 const currProp = prop;
