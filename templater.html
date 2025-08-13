@@ -91,6 +91,10 @@ button { margin: 3px 10px; }
 
 .hidden { display: none; }
 
+.search-button {
+    width: 300px;
+}
+
 .spacy {
     display: flex;
     flex-direction: row;
@@ -149,6 +153,9 @@ const templaterData = {};
 <div class="spacy">
     <div class="toc"></div>
     <div>
+        <div>
+            <input type="search" class="search-button" placeholder="Search..." id="searchFor" onkeyup="doDelayedSeach(this.value)" />
+        </div>
         <div class="link-list"></div>
         <button class="link-button" onclick="toggleLS()">Local Storage</button>
         <div class="local-storage hidden">
@@ -174,6 +181,10 @@ const itemTemplate = document.querySelector ("#item-template").innerHTML;
 const folderTemplate = document.querySelector ("#folder-template").innerHTML;
 
 const hiddenFieldLabel = "hidden";
+
+let timeout = null;
+
+let selectedTab = Object.keys(templaterData)[0];
 
 const createUID = () => {
     return 'x'.repeat(24).replace(/[x]/g, function(c) {
@@ -324,18 +335,23 @@ const copyLS = () => {
 
 const displayToc = () => {
     const tocDiv = document.querySelector ('.toc');
-    const tab = `<button onclick="showData('{item}')">{item}</button>`;
+    const tab = `<button onclick="selectTab('{item}')">{item}</button>`;
     tocDiv.innerHTML = Object.keys(templaterData).map(item => tab.supplant({item})).join("");
 }
 
-const showData = (tab) => {
-    if(!tab) { tab = Object.keys(templaterData)[0] };
+const selectTab = (tab) => {
+    if (tab) { selectedTab = tab; }
+    showData(templaterData[selectedTab]);
+}
+
+const showData = (data) => {
+    
     const list = [];
-    parseObj(templaterData[tab], list);
+    parseObj(data, list);
     list.forEach((item, ndx) => {
         processReplace(item, ndx, list);
     })
-    const displayList = displayObj (templaterData[tab], []);
+    const displayList = displayObj (data, []);
     linkListDiv.innerHTML = displayList.join("");
 }
 
@@ -361,8 +377,25 @@ const search = (data, searchFor) => {
     return result;
 }
 
+const doDelayedSeach = (searchFor) => {
+    if (timeout) {
+        clearTimeout(timeout);
+    }
+    timeout = setTimeout ( () => {
+        let filteredList = search (templaterData[selectedTab], searchFor);
+        showData(filteredList);
+        if (searchFor) { showAll() };
+    }, 500)
+}
+
+const showAll = () => {
+    const hiddenNodeList = document.querySelectorAll ('.hidden');
+    const hiddenList = [...hiddenNodeList];
+    hiddenList.map(folder => folder.classList.remove("hidden"));
+}
+
 displayToc();
-showData ();
+selectTab ();
 
 </script>
 </body> 
