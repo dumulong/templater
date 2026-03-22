@@ -1,403 +1,863 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1"> 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Templater</title>
-<style> 
 
+<head>
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Templater</title>
+<style>
 body {
-    line-height: 1.3;
-    margin-left: 20px;
-    color: darkslategrey;
-    font-family: Segoe UI, Roboto, Oxygen, Ubuntu, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  line-height: 1.3;
+  margin-left: 20px;
+  color: darkslategrey;
+  font-family:
+    Segoe UI,
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Fira Sans,
+    Droid Sans,
+    Helvetica Neue,
+    sans-serif;
 }
 
-button { margin: 3px 10px; }
+.item-value-brief ul {
+  margin: 0;
+  padding: 0;
+  padding-left: 1em;
+}
 
-.link-list {
-    margin-bottom: 30px;
+.content {
+  margin-bottom: 30px;
 }
 
 #lsData {
-    width: 300px;
-    height: 150px;
-    padding: 12px;
-}
-
-.toc {
-    display: flex;
-    flex-direction: column;
-    border-right: 2px solid black;
-    margin-right: 10px;
-    padding: 0 10px;
-}
-
-.more > button {
-    margin: 0;
-    padding: 0;
-    padding-right: 10px;
-    border: 0;
-    background-color: transparent;
-    font-size: 20px;
-}
-
-.container {
-    display: flex;
-    align-items: center;
-}
-
-.item-list {
-    margin-left: 20px;
-    padding-left: 20px;
-    border-left: 1px solid #e0e0e0;
-}
-
-.item:first-child {
-    padding-top: 10px;
-}
-
-.label {
-    min-width: 110px;
-    font-weight: 600;
-    margin-right: 6px;
-}
-
-.folder-name {
-    padding-top: 6px;
-    font-size: 16px;
-    font-weight: 800;
-}
-
-.link-button {
-  display: inline; 
-  padding: 0;
-  border: 0;
-  cursor: pointer;
-  background: transparent;
-  color: silver;
-}
-
-.ls-button-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.ls-div {
-    display: flex;
-    flex-direction: row;    
-}
-
-.hidden { display: none; }
-
-.search-button {
-    width: 300px;
+  width: 900px;
+  height: 250px;
+  padding: 12px;
 }
 
 .spacy {
-    display: flex;
-    flex-direction: row;
+  display: flex;
+  flex-direction: row;
+  margin-top: 20px;
+}
+
+.toc {
+  display: flex;
+  flex-direction: column;
+  margin-right: 20px;
+  padding: 0 10px;
+  border-right: 2px solid silver;
+}
+
+.folder-icon {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  font-size: 20px;
+}
+
+.item-container {
+  display: flex;
+  align-items: baseline;
+}
+
+.tab-button{
+  padding: 3px 10px;
+  border: 1px solid black;
+  background: #eee;
+  margin-bottom: 5px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: medium;
+  cursor: pointer;
+}
+
+.item-list {
+  margin-left: 10px;
+  padding-left: 20px;
+  border-left: 1px solid #e0e0e0;
+}
+
+.item-container:first-child {
+  padding-top: 3px;
+}
+
+.item-container:last-child {
+  padding-bottom: 16px;
+}
+
+.key-display {
+  min-width: 110px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.folder-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.folder-name {
+  padding: 3px 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.active-tab {
+  background-color: rgb(13, 110, 253);
+  color: white;
+}
+
+.copy-button {
+  padding: 0;
+  margin: 0;
+  margin-left: 10px;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(0, 0, 238, 0.3);
+}
+
+.folder-name { 
+  display:inline-flex; 
+  align-items:center; 
+  gap:8px; 
+}
+
+.share-button {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(0, 0, 238, 0.3);
+}
+
+.share-tab {
+  margin-top: 12px;
+}
+
+.ls-button-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-div {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.ls-button {
+  display: inline;
+  padding: 0;
+  margin-top: 24px;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(0, 0, 238, 0.3);
+}
+
+.ls-button-list button {
+  padding: 3px 6px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 8px;
+  font-size: small;
+  background-color: #eee;
+  border: 1px solid black;
+}
+.ls-note {
+  font-size: small;
+  color: dimgray;
+  margin-top: 3px;
+}
+.hidden {
+  display: none;
+}
+
+.hidden-folder {
+  display: none;
+}
+
+.search-section {
+  margin-bottom: 20px;
+}
+
+.search-input {
+  padding: 6px 10px;
+  font-size: medium;
+  width: 500px;
+  border-radius: 8px;
+}
+
+#toastContainer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.toast {
+  background-color: #333;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+.toast-normal { background-color: #6c757d; }
+.toast-success { background-color: rgb(25, 135, 84) }
+.toast-warning { background-color: #ffc107; }
+.toast-failure { background-color: #dc3545; color: white;}
+
+#my-popover:popover-open {
+  position: fixed;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: rgb(176, 207, 222);
+  max-width: 600px;
+  word-break: break-all;
 }
 
 </style>
 
+<script src="templater_data.js"></script>
+
+</head>
+
+<body>
+<!-- Templates -->
+
+<template id="folder-template">
+  <div class="folder-toggle">
+    <div class="folder-name" onclick="toggleFolder('folder_{id}')">
+      <button class="folder-icon">&#128194;</button>{displayKey}
+    </div>
+    <button class="share-button" onclick="shareFolder('folder_{id}')">Share Folder</button>
+  </div>
+  <div data-value="{displayKey}" class="folder_{id} item-list hidden-folder">{children}</div>
+</template>
+
+<template id="item-template">
+  <div class="item-container" id="itemContainer_{id}" data-value="{value}" data-key="{key}">
+    <div class="key-display"><span id="displayKey_{id}" class="popit">{displayKey}</span> :</div>
+    <div class="item-display {showItemClass}">
+      <div class="item-value-brief popit">{valueBrief}</div>
+    </div>
+    <div class="link-display {showLinkClass}">
+      <a class="item-value-brief popit" href="javascript:openLink('itemContainer_{id}');">{valueBrief}</a>
+    </div>
+    <button class="copy-button" onclick="copyText('itemContainer_{id}')">copy</button>
+  </div>
+</template>
+
+<template id="localstorage-template">
+    <div class="localstorage-section">
+      <div class="ls-div">
+        <div class="ls-button-list">
+          <button onclick="getLs()">Get</button>
+          <button onclick="setLs()">Set</button>
+          <button onclick="copyLs()">Copy</button>
+          <button onclick="mergeLs()">Merge</button>
+          <button onclick="clearLs()">Clear</button>
+          <button onclick="deleteLs()">Delete</button>
+        </div>
+        <div>
+          <div>
+            <textarea id="lsData"></textarea>
+          </div>
+          <div class="ls-note">Local Storage variable: "{templaterLSKey}"</div>
+        </div>
+      </div>
+    </div>
+</template>
+
+<!-- Body -->
+
+<main class="spacy">
+  <aside class="toc"></aside>
+  <div>
+    <section class="search-section">
+      <input type="search" class="search-input" placeholder="Search..." id="searchFor"
+        onkeyup="doDelayedSearch(this.value)" />
+    </section>
+    <article class="content"></article>
+  </div>
+  <aside id="toastContainer"></aside>
+</main>
+
 <script>
-// ---------------------------------------------
 // Function used for template value replacement
-// ---------------------------------------------
 String.prototype.supplant = function (o = {}) {
-    return this.replace(/{([^{}]*)}/g, function (a, b) {
-        let r = o[b];
-        return typeof r === "string" || typeof r === "number" ? r : a;
-    });
+  return this.replace(/{([^{}]*)}/g, function (a, b) {
+    let r = o[b];
+    return typeof r === "string" || typeof r === "number" ? r : a;
+  });
 };
 </script>
 
 <script>
-const templaterData = {};
-</script>
 
-<script src="templater_data.js"></script>
-<script src="templater_data2.js"></script>
+const itemTemplate = document.querySelector("#item-template").innerHTML;
+const folderTemplate = document.querySelector("#folder-template").innerHTML;
 
-</head>
-<body>
-
-<!-- ============= -->
-<!-- Templates -->
-<!-- ============= -->
-
-<template id="folder-template">
-    <div class="folder-name more" onclick="toggleFolder ('folder_{id}')">
-        <button>&#128194; </button>{label}
-    </div>
-    <div class="folder_{id} item-list hidden">
-        {children}
-    </div>
-</template>
-
-<template id="item-template">
-    <div class="container item">
-        <div class="label" id="{label}">{label} : </div>
-        <div class="{showItemClass}" data-value="{value}" id="link_{id}">{value}</div>
-        <a class="display-link {showLinkClass}" href="javascript:openLink('{id}', '{value}');">{urlLabel}</a>
-        <button class="copy" onclick="clip( 'link_{id}')">copy</button>
-    </div>
-</template>
-
-<!-- ============= -->
-<!-- The body ->
-<!—- ============= -->
-
-<div class="spacy">
-    <div class="toc"></div>
-    <div>
-        <div>
-            <input type="search" class="search-button" placeholder="Search..." id="searchFor" onkeyup="doDelayedSeach(this.value)" />
-        </div>
-        <div class="link-list"></div>
-        <button class="link-button" onclick="toggleLS()">Local Storage</button>
-        <div class="local-storage hidden">
-            <div class="ls-div">
-                <div class="ls-button-list">
-                    <button onclick="getLS()">Get</button>
-                    <button onclick="setLS()">Set</button>
-                    <button onclick="copyLS()">Copy</button>
-                    <button onclick="clearLS()">Clear</button>
-                    <button onclick="deleteLS()">Delete</button>
-                </div>
-                <textarea id="lsData"></textarea>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-<script>
-const linkListDiv = document.querySelector(".link-list");
-const itemTemplate = document.querySelector ("#item-template").innerHTML;
-const folderTemplate = document.querySelector ("#folder-template").innerHTML;
-
+const templaterLSKey = "templaterLS";
+const temporaryTabName = "Temporary";
 const hiddenFieldLabel = "hidden";
 
 let timeout = null;
 
-let selectedTab = Object.keys(templaterData)[0];
-
 const createUID = () => {
-    return 'x'.repeat(24).replace(/[x]/g, function(c) {
-        var r = Math.random () * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8) ;
-        return v.toString(16);
-    });
-}
+  return "x".repeat(24).replace(/[x]/g, function (c) {
+    var r = (Math.random() * 16) | 0,
+      v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
-const augmentItem = (key, value) => {
-    const MAX = 60;
-    const list = [];
-    const item = { id : createUID(), label: key };
-    if (value.match(/^http.*/)) {
-        item.value = value;
-        item.urlLabel = (value.length < MAX ? value : value.substring(0,MAX/2) + ' [...] ' + value.substring (value.length - (MAX/2) ));
-        item.showItemClass = "hidden";
-        item.showLinkClass = "link";
+const prepItemForDisplay = (key, value) => {
+  const SECRET = "secret:";
+  const resolvedValue =  resolveLinkVar(value);
+
+  const item = {};
+  item.id = createUID();
+  item.key = key; 
+  item.displayKey = key; 
+  item.value = value;
+  
+  if (resolvedValue.match(/^http.*/)) {
+    item.valueBrief = getShortenValue(resolvedValue);
+    item.showItemClass = "hidden";
+    item.showLinkClass = "";
+  } else {
+    if (item.value.toLowerCase().startsWith(SECRET)) {
+      item.value = value.substring(SECRET.length); // Remove the "secret:" prefix for actual value
+      item.valueBrief = item.value.replace(/./g, "&#8226;");
     } else {
-        item.value = value;
-        item.urlLabel = "";
-        item.showItemClass = "item";
-        item.showLinkClass = "hidden";
+      item.valueBrief = resolvedValue;
     }
-    return item;
-}
+    item.showItemClass = "";
+    item.showLinkClass = "hidden";
+  }
+
+  return item;
+};
+
+const getShortenValue = (value, maxLength = 60) => {
+  return value.length < maxLength ? 
+    value : 
+    value.substring(0, maxLength / 2) + "[...]" + value.substring(value.length - maxLength / 2);
+};
 
 const parseObj = (item, list) => {
-    const keys = Object.keys(item);
-    keys.forEach( (key) => {
-        if (Array.isArray (item[key])) {
-            item[key].forEach (child => parseObj (child, list));
-        } else if (typeof (item [key]) === "object") {
-            parseObj (item[key], list)
-        }
-    })
-    list.push (item)
-}
+  const keys = Object.keys(item);
+  keys.forEach((key) => {
+    if (Array.isArray(item[key])) {
+      item[key].forEach((child) => parseObj(child, list));
+    } else if (typeof item[key] === "object") {
+      parseObj(item[key], list);
+    }
+  });
+  list.push(item);
+};
 
 const processReplace = (item, ndx, list) => {
-    const keys = Object.keys(item);
-    keys.forEach ( key => {
-        if (typeof (item[key]) !== 'object') {
-            item [key] = replace (item[key], ndx, list);
-        }
-    })
-}
-
-const replace = (value, ndx, list) => {
-    const maxRetry = 10;
-    let retry = 0;
-    while(retry++ < maxRetry && `%{value}`.match(/{([^{}]*)}/g)) {
-        for(let i=ndx;i >=0; i--) {
-            value = value.supplant (list [i]);
-        }
+  const keys = Object.keys(item);
+  keys.forEach((key) => {
+    if (typeof item[key] !== "object") {
+      item[key] = replace(item[key], ndx, list);
     }
-    return value;
-}
+  });
+};
+
+// This function will replace the values between curly brackets {} 
+// with the previous values in the list, and it will do it recursively 
+// until there is no more value to replace or it reaches the max retry 
+// limit (to avoid infinite loop)
+const replace = (value, ndx, list) => {
+  const maxRetry = 10;
+  let retry = 0;
+
+  while (retry++ < maxRetry && `${value}`.match(/\{([^{}]*)\}/g)) {
+    for (let i = ndx; i >= 0; i--) {
+      value = value.supplant(list[i]);
+    }
+  }
+
+  return value;
+};
 
 const displayObj = (obj, list, firstTime = true) => {
-    let itemList = []
-    for(const [key, value] of Object.entries (obj)) {
-        if (typeof value === 'object') {
-            if (key !== 'hidden') {
-                const children = displayObj(value, list, false);
-                const folderObj = {
-                    id: createUID(),
-                    label: key,
-                    children: children.join ("")
-                }
-                const folderDisplay = folderTemplate.supplant (folderObj);
-                itemList.push (folderDisplay);
-            }
-        } else {
-            const item = augmentItem (key, value)
-            const itemDisplay = itemTemplate.supplant (item) ;
-            itemList.push(itemDisplay);
-        }
+  let itemList = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === "object") {
+      if (key !== "hidden") {
+        const children = displayObj(value, list, false);
+
+        const folderObj = {
+          id: createUID(),
+          displayKey: key,
+          children: children.join(""),
+        };
+
+        const folderDisplay = folderTemplate.supplant(folderObj);
+        itemList.push(folderDisplay);
+      }
+    } else {
+      const item = prepItemForDisplay(key, value);
+      const itemDisplay = itemTemplate.supplant(item);
+      itemList.push(itemDisplay);
     }
-    list = list.concat (itemList);
-    return (firstTime ? list : itemList);
-}
+  }
+  list = list.concat(itemList);
+  return firstTime ? list : itemList;
+};
 
-const toggleFolder = (folderId) => { 
-    const folder = document.querySelector (`.${folderId}`); 
-    folder.classList.toggle("hidden");
-}
+const toggleFolder = (folderId) => {
+  const folder = document.querySelector(`.${folderId}`);
+  folder.classList.toggle("hidden-folder");
+};
 
-const getValue = (id, link) => {
-    const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
-    const matchArray = Array.from( link.matchAll (varRegExp) ).map (x => x [0]); // Only take the "matched" variable name
-    const matchSet = new Set (matchArray); // Make the variable name unique
-    for (const variable of matchSet) {
-        const strLS = localStorage.getItem ("templaterLS") || "{}";
-        const dataLS = JSON.parse(strLS);
-        const defaultVal = dataLS[variable];
-        let replaceBy = prompt(variable, defaultVal === undefined ? "" : defaultVal);
-        if (replaceBy === null) { return false; } // Exit on "cancel"
-        link = link.replaceAll (variable, replaceBy);
-        dataLS[variable] = replaceBy;
-        localStorage.setItem ("templaterLS", JSON.stringify(dataLS));
+const promptVarSwitch = (link) => {
+  const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
+  const matchArray = Array.from(link.matchAll(varRegExp)).map(x => x[0]); // Only take the "matched" variable name
+  const matchSet = new Set(matchArray); // Make the variable name unique
+
+  for (const variable of matchSet) {
+    const defaultVal = globalData.lsData[variable];
+    let replaceBy = prompt(variable, defaultVal === undefined ? "" : defaultVal);
+    if (replaceBy === null) {
+      return false; // Exit on "cancel"
     }
-    return link;
-}
+    link = link.replaceAll(variable, replaceBy);
+    globalData.lsData[variable] = replaceBy;
+  }
+  if (matchSet.size > 0) {
+    localStorage.setItem(templaterLSKey, JSON.stringify(globalData.lsData));
+  }
+  return link;
+};
 
-const clip = (elementId) => {
-    const element = document.querySelector (`#${elementId}`);
-    const fullLink = getValue (elementId, element.dataset.value); //NOTE: We used a data attribute to avoid parsing issues... 
-    if (!fullLink) { return; }
-    navigator.clipboard.writeText (fullLink); 
-    console.log ("copied!");
-}
+const resolveLinkVar = (link) => {
 
-const openLink = (id, link) => {
-    const fullLink = getValue (id, link);
-    if (!fullLink) { return; }
-    window.open (fullLink, `link_${id}`);
-}
+  const placeholderRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
+  const matchArray = Array.from(link.matchAll(placeholderRegExp)).map(x => x[0]); // Only take the "matched" variable name
+  const matchSet = new Set(matchArray); // Make the variable name unique
 
-const toggleLS = () => {
-    const ls = document.querySelector ('.local-storage');
-    ls.classList.toggle("hidden");
-}
+  for (const variable of matchSet) {
+    const defaultVal = globalData.lsData[variable];
+    if (defaultVal) {
+      link = link.replaceAll(variable, defaultVal);
+    }
+  }
 
-const getLS = () => {
-    document.querySelector ('#lsData').value = localStorage.getItem("templaterLS");
-}
+  return link;
+};
 
-const setLS = () => {
-    const lsDataInput = document.querySelector('#lsData');
-    localStorage.setItem("templaterLS", lsDataInput.value);
-}
+const parseLsData = () => {
+  globalData.lsData = {}; 
+  templaterData[temporaryTabName] = {};
+  const strLs = localStorage.getItem(templaterLSKey) || "{}";
+  const keyPattern = /^\[.*\]$/;
+  try {
+    const data = JSON.parse(strLs);
+    for (const key in data) {
+      globalData.lsData[key] = data[key];
+      if (!keyPattern.test(key)) {
+        templaterData[temporaryTabName][key] = data[key];
+      }
+    }
+  } catch (e) {
+    showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
+    return {};
+  } 
+};
 
-const deleteLS = () => {
-    const lsDataInput = document.querySelector('#lsData');
-    localStorage.removeItem("templaterLS");
-    clearLS();
-}
+const shareTab = (tabName) => {
+  const data = (tabName ? templaterData[tabName] : globalData.filteredList);
+  const resultStr = JSON.stringify(data, null, 2);
+  navigator.clipboard.writeText(resultStr);
+  showToast("Tab content copied!", "success");
+};
 
-const clearLS = () => {
-    document.querySelector('#lsData').value = "";
-}
+const shareFolder = (folderId) => {
+  const folder = document.querySelector(`.${folderId}`);
+  const value = folder.dataset.value ?? "";
+  const result = search (templaterData[globalData.selectedTab], value, true); // TODO: find the actual foldder? not the first one?
+  const resultStr = JSON.stringify(result, null, 2);
+  navigator.clipboard.writeText(resultStr);
+  showToast("Folder content copied!", "success");
+};
 
-const copyLS = () => {
-    const lsDataInput = document.querySelector('#lsData');
-    navigator.clipboard.writeText (lsDataInput.value);
-    console.log ("copied!");
+const copyText = (elementId) => {
+  const element = document.querySelector(`#${elementId}`);
+  const fullLink =  promptVarSwitch(element.dataset.value ?? "");
+  if (!fullLink) return;
+  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => el.innerHTML = fullLink);
+  navigator.clipboard.writeText(fullLink);
+  showToast("copied!", "success");
+};
+
+const openLink = (elementId) => {
+  const element = document.querySelector(`#${elementId}`);
+  const fullLink =  promptVarSwitch(element.dataset.value ?? "");
+  if (!fullLink) return;
+  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => el.innerHTML = fullLink);
+  window.open(fullLink, elementId);
+};
+
+const showLsSection = () => {
+  const searchSection = document.querySelector(".search-section");
+  searchSection.classList.add("hidden");
+  const contentDiv = document.querySelector(".content");
+  contentDiv.innerHTML = document.querySelector("#localstorage-template").innerHTML.supplant({ templaterLSKey });
+};
+
+const validateJson = (jsonString) => {
+  try {
+    JSON.parse(jsonString);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+const getLs = () => {
+  const compactJsonString = localStorage.getItem(templaterLSKey) || "{}";
+  try {
+    const jsObject = JSON.parse(compactJsonString);
+    const formattedJsonString = JSON.stringify(jsObject, null, 2);
+    document.querySelector("#lsData").value = formattedJsonString;
+  } catch (e) {
+    showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
+    return;
+  } 
+};
+
+const setLs = () => {
+  const lsDataInput = document.querySelector("#lsData");
+  if (!validateJson(lsDataInput.value)) {
+    showToast("Invalid JSON format. Please correct it before setting Local Storage.", "failure");
+    return;
+  }
+  const lsData = JSON.parse(lsDataInput.value);
+  localStorage.setItem(templaterLSKey, JSON.stringify(lsData));
+  showToast("Local Storage set!", "success");
+  resetView();
+};
+
+const deleteLs = () => {
+  const lsDataInput = document.querySelector("#lsData");
+  localStorage.removeItem(templaterLSKey);
+  clearLs();
+  showToast("Local Storage deleted!", "warning");
+  resetView();
+};
+
+const clearLs = () => {
+  document.querySelector("#lsData").value = "";
+};
+
+const copyLs = () => {
+  const lsDataInput = document.querySelector("#lsData");
+  if (!validateJson(lsDataInput.value)) {
+    showToast("Invalid JSON format. Please correct it before setting Local Storage.", "failure");
+    return;
+  }
+  navigator.clipboard.writeText(lsDataInput.value);
+  showToast("Local Storage copied!", "success");
+};
+
+const mergeLs = () => {
+  const lsDataInput = document.querySelector("#lsData");
+  if (!validateJson(lsDataInput.value)) {
+    showToast("Invalid JSON format. Please correct it before setting Local Storage.", "failure");
+    return;
+  }
+  const strLs = localStorage.getItem(templaterLSKey) || "{}";
+  const dataLs = JSON.parse(strLs);
+  const dataInput = JSON.parse(lsDataInput.value);
+  const mergedData = deepMerge(dataLs, dataInput);
+  localStorage.setItem(templaterLSKey, JSON.stringify(mergedData));
+  const formattedJsonString = JSON.stringify(mergedData, null, 2);
+  lsDataInput.value = formattedJsonString;
+  showToast("Local Storage merged!", "success");
+  resetView();
+};
+
+const deepMerge = (target, source) => {
+  for (const key in source) {
+    if (source[key] instanceof Object && key in target) {
+      target[key] = deepMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
 }
 
 const displayToc = () => {
-    const tocDiv = document.querySelector ('.toc');
-    const tab = `<button onclick="selectTab('{item}')">{item}</button>`;
-    tocDiv.innerHTML = Object.keys(templaterData).map(item => tab.supplant({item})).join("");
-}
+  const tocDiv = document.querySelector(".toc");
+  const tabTemplate = `<button class="tab-button" onclick="selectTab('{item}')">{item}</button>`;
+  const lsButton = `<button class="ls-button" onclick="showLsSection()">Local Storage</button>`;
+  
+  tocDiv.innerHTML = Object.keys(templaterData)
+    .filter(tab => Object.keys(templaterData[tab]).length > 0)
+    .map((item) => tabTemplate.supplant({ item }))
+    .join("") + lsButton;
+};
 
 const selectTab = (tab) => {
-    if (tab) { selectedTab = tab; }
-    showData(templaterData[selectedTab]);
-}
+  globalData.filteredList = {}; // Clear the filtered list when selecting a new tab
+
+  if (tab && templaterData[tab]) {
+    globalData.selectedTab = tab;
+  } else if (templaterData[globalData.selectedTab]) {
+    globalData.selectedTab = globalData.selectedTab; // Keep the current tab if it has data
+  } else if (Object.keys(templaterData)[0]) {
+    globalData.selectedTab = Object.keys(templaterData)[0];
+  } else {
+    showToast(`No data available for the selected tab!`, "error");
+    return
+  }
+
+  Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
+    if (button.textContent === globalData.selectedTab) {
+      button.classList.add("active-tab");
+    } else {
+      button.classList.remove("active-tab");
+    }
+  });
+
+  showData(templaterData[globalData.selectedTab]);
+  
+  const search = document.querySelector("input[type=search]");
+  search.value = "";
+
+  addPopoverListeners();
+};
 
 const showData = (data) => {
-    
-    const list = [];
-    parseObj(data, list);
-    list.forEach((item, ndx) => {
-        processReplace(item, ndx, list);
-    })
-    const displayList = displayObj (data, []);
-    linkListDiv.innerHTML = displayList.join("");
-}
+  const searchSection = document.querySelector(".search-section");
+  searchSection.classList.remove("hidden");
 
-const search = (data, searchFor) => {
-    const pattern = new RegExp(searchFor, "i");
-    const result = {};
-    for (prop in data) {
-        if (typeof (data[prop]) === 'string') {
-            if (pattern.test(prop) || pattern.test(data[prop])) {
-                result[prop] = data[prop];
-            }
-        } else {
-            if (pattern.test(prop)) {
-                result[prop] = data[prop];
-            } else {
-                const currProp = prop;
-                const local = search (data[prop], searchFor)
-                if (Object.keys(local).length > 0) {
-                    result[currProp] = local;
-                }
-            }
+  const list = [];
+  parseObj(data, list);
+
+  list.forEach((item, ndx) => {
+    processReplace(item, ndx, list);
+  });
+  const displayList = displayObj(data, []);
+  if (globalData.filteredList && Object.keys(globalData.filteredList).length > 0) {
+    displayList.push(`<button class="share-button share-tab" onclick="shareTab('')">Share Search Results</button>`);
+  } else {
+    displayList.push(`<button class="share-button share-tab" onclick="shareTab('${globalData.selectedTab}')">Share Tab</button>`);
+  }
+  const contentDiv = document.querySelector(".content");
+  contentDiv.innerHTML = displayList.join("");
+};
+
+const search = (data, searchFor, exactMatch = false) => {
+  const result = {};
+
+  for (prop in data) {
+    if (typeof data[prop] === "string") {
+      if (isMatchingSearch(prop, searchFor, exactMatch) || isMatchingSearch(data[prop], searchFor, exactMatch)) {
+        result[prop] = data[prop];
+      }
+    } else {
+      if (isMatchingSearch(prop, searchFor, exactMatch)) {
+        result[prop] = data[prop];
+      } else {
+        const currProp = prop;
+        const local = search(data[prop], searchFor, exactMatch);
+        if (Object.keys(local).length > 0) {
+          result[currProp] = local;
         }
+      }
     }
-    return result;
-}
+  }
 
-const doDelayedSeach = (searchFor) => {
-    if (timeout) {
-        clearTimeout(timeout);
+  return result;
+};
+
+const isMatchingSearch = (value, searchFor, exactMatch = false) => {
+  if (exactMatch) {
+    return (value === searchFor) 
+  } else {
+    try {
+      const pattern = new RegExp(searchFor, "i");
+      return pattern.test(value) 
+    } catch (e) {
+      showToast(`Invalid regex pattern: ${searchFor}`, "failure");
+      return false;
     }
-    timeout = setTimeout ( () => {
-        let filteredList = search (templaterData[selectedTab], searchFor);
-        showData(filteredList);
-        if (searchFor) { showAll() };
-    }, 500)
+    
+  }
+  return false;
+};
+
+const doDelayedSearch = (searchFor) => {
+  if (timeout) {
+    clearTimeout(timeout);
+  }
+
+  timeout = setTimeout(() => {
+    //globalData.filteredList = search(templaterData[globalData.selectedTab], searchFor); //Search for selected tab only
+    globalData.filteredList = search(templaterData, searchFor); //General search
+    showData(globalData.filteredList);
+    addPopoverListeners();
+
+    if (searchFor) {
+       openAllFolders();
+    }
+  }, 500);
+};
+
+const openAllFolders = () => {
+  const hiddenNodeList = document.querySelectorAll(".hidden-folder");
+  const hiddenList = [...hiddenNodeList];
+  hiddenList.map((folder) => folder.classList.remove("hidden-folder"));
+};
+
+const showToast = (message, toastPriority = "normal") => {
+  const toastContainer = document.getElementById("toastContainer");
+  const toast = document.createElement("div");
+
+  toast.classList.add("toast", `toast-${toastPriority}`);
+  toast.textContent = message;
+
+  toastContainer.appendChild(toast);
+
+  // Show the toast
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 10);
+
+  // Hide and remove after a few seconds
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => {
+      toast.remove();
+    }, 500);
+  }, 3000);
+};
+
+// Add event for the search's clear "button"
+const addSearchListener = () => {
+  const search = document.querySelector("input[type=search]");
+  search.addEventListener("input", (e) => {
+    if (e.currentTarget.value === "") {
+      globalData.filteredList = {};
+      showData(templaterData[globalData.selectedTab]);
+    }
+  });
+};
+
+const getPopover = () => {
+  let popover = document.getElementById("my-popover");
+  if (!popover) {
+    popover = document.createElement("div");
+    popover.id = "my-popover";
+    popover.setAttribute("popover", "manual");
+    document.body.appendChild(popover);
+  }
+  return popover;
+};
+
+const positionPopoverAbove = (el, popoverDiv) => {
+  const anchorRect = el.getBoundingClientRect();
+  const popoverRect = popoverDiv.getBoundingClientRect();
+
+  // Prefer above; if it doesn't fit, place below.
+  const gap = 2;
+  let top = anchorRect.top - popoverRect.height - gap;
+  if (top < 0) top = anchorRect.bottom + gap;
+
+  // Align left edge with anchor; clamp to viewport.
+  let left = anchorRect.left;
+  left = Math.max(
+    0,
+    Math.min(left, window.innerWidth - popoverRect.width),
+  );
+
+  popoverDiv.style.left = `${left}px`;
+  popoverDiv.style.top = `${top}px`;
+};
+
+const addPopoverListeners = () => {
+  const myPopover = getPopover();
+  const popitElements = document.querySelectorAll(".popit");
+  const keyPattern = /^\[.*\]$/; // Start with [ and end with ]
+  const valuePattern = /\[.*\]/; // Contain [ and ]
+
+  popitElements.forEach((el) => {
+    el.addEventListener("mouseenter", function () {
+      const itemContainer = el.closest('.item-container');
+      const parentClasses = el.parentElement.classList;
+
+      const key = itemContainer.dataset.key ?? "";
+      const value = itemContainer.dataset.value ?? "";
+
+      if (parentClasses.contains("key-display")) {
+        if (keyPattern.test(key)) { // Start with [ and end with ]
+          myPopover.textContent = key;
+          myPopover.showPopover();
+          // Wait for layout to update before positioning
+          requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
+        }
+      }
+
+      if (parentClasses.contains("item-display") || parentClasses.contains("link-display")) {
+        if (valuePattern.test(value)) {
+          myPopover.textContent = value;
+          myPopover.showPopover();
+          // Wait for layout to update before positioning
+          requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
+        }
+      }
+    });
+
+    el.addEventListener("mouseleave", () => myPopover.hidePopover());
+  });
+};
+
+const resetView = () => {
+  parseLsData();
+  displayToc();
+  selectTab();
+};
+
+const globalData = {
+  selectedTab: null,
+  lsData: {},
+  filteredList: {},
 }
 
-const showAll = () => {
-    const hiddenNodeList = document.querySelectorAll ('.hidden');
-    const hiddenList = [...hiddenNodeList];
-    hiddenList.map(folder => folder.classList.remove("hidden"));
-}
-
-displayToc();
-selectTab ();
+resetView();
+addSearchListener();
+addPopoverListeners();
 
 </script>
-</body> 
+</body>
+
 </html>

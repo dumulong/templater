@@ -1,0 +1,15 @@
+{
+    "[number]": "8",
+    "Project" : "Stoic Values and Principles",
+    "Desc" : "An exaple of using templater to create a structured note with links and variables.",
+    "Montaigne" : "https://en.wikipedia.org/wiki/Michel_de_Montaigne",
+    "Ryan_Holiday" : "https://en.wikipedia.org/wiki/Ryan_Holiday",
+    "Massimo_Pigliucci" : "https://en.wikipedia.org/wiki/Massimo_Pigliucci",
+    "Values" : {
+        "Wisdom" : "The ability to make sound decisions and judgments based on knowledge and experience.",
+        "Justice" : "The principle of fairness and moral rightness in treating others and making decisions.",
+        "Courage" : "The mental or moral strength to persevere and withstand danger, fear, or difficulty.",
+        "Temperance" : "The practice of self-control, moderation, and restraint in all aspects of life."
+    },
+    "What steps you need to take" : "This is an example of a note with a list<br><ul><li>Go to the fist links</li><li>Then, go to the next link</li></ul>"
+}
