@@ -350,7 +350,7 @@ const prepItemForDisplay = (key, value) => {
   } else {
     if (item.value.toLowerCase().startsWith(SECRET)) {
       item.value = value.substring(SECRET.length); // Remove the "secret:" prefix for actual value
-      item.valueBrief = item.value.replace(/./g, "&#8226;");
+      item.valueBrief = item.value.replace(/./g, '\u2022');
     } else {
       item.valueBrief = resolvedValue;
     }
@@ -512,7 +512,14 @@ const copyText = (elementId) => {
   const element = document.querySelector(`#${elementId}`);
   const fullLink =  promptVarSwitch(element.dataset.value ?? "");
   if (!fullLink) return;
-  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => el.innerHTML = fullLink);
+  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
+    const bulletEntityPattern = /^[\u2022]+$/;
+    if (bulletEntityPattern.test(el.innerHTML)) {
+      el.innerHTML = '\u2022'.repeat(fullLink.length);
+    } else {
+      el.innerHTML = fullLink;
+    }
+  });
   navigator.clipboard.writeText(fullLink);
   showToast("copied!", "success");
 };
