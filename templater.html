@@ -257,13 +257,13 @@ body {
 </template>
 
 <template id="item-template">
-  <div class="item-container" id="itemContainer_{id}" data-value="{value}" data-key="{key}">
+  <div class="item-container" id="itemContainer_{id}" data-value="{value}"">
     <div class="key-display"><span id="displayKey_{id}" class="popit">{displayKey}</span> :</div>
     <div class="item-display {showItemClass}">
-      <div class="item-value-brief popit">{valueBrief}</div>
+      <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
     </div>
     <div class="link-display {showLinkClass}">
-      <a class="item-value-brief popit" href="javascript:openLink('itemContainer_{id}');">{valueBrief}</a>
+      <a class="item-value-brief popit {maskClass}" href="javascript:openLink('itemContainer_{id}');">{valueBrief}</a>
     </div>
     <button class="copy-button" onclick="copyText('itemContainer_{id}')">copy</button>
   </div>
@@ -323,6 +323,8 @@ const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
 const hiddenFieldLabel = "hidden";
 
+const linkRegExp = /^http.*/;
+
 let timeout = null;
 
 const createUID = () => {
@@ -333,32 +335,37 @@ const createUID = () => {
   });
 };
 
+
 const prepItemForDisplay = (key, value) => {
-  const SECRET = "secret:";
-  const resolvedValue =  resolveLinkVar(value);
 
-  const item = {};
-  item.id = createUID();
-  item.key = key; 
-  item.displayKey = key; 
-  item.value = value;
-  
-  if (resolvedValue.match(/^http.*/)) {
-    item.valueBrief = getShortenValue(resolvedValue);
-    item.showItemClass = "hidden";
-    item.showLinkClass = "";
-  } else {
-    if (item.value.toLowerCase().startsWith(SECRET)) {
-      item.value = value.substring(SECRET.length); // Remove the "secret:" prefix for actual value
-      item.valueBrief = item.value.replace(/./g, '\u2022');
+    const SECRET = "secret:";
+    const resolvedValue = resolveLinkVar(value);
+
+    const item = {};
+    item.id = createUID();
+    item.key = key;
+    item.displayKey = key;
+    item.value = value;
+
+    if (linkRegExp.test(resolvedValue)) {
+        item.valueBrief = getShortenValue(resolvedValue);
+        item.showItemClass = "hidden";
+        item.showLinkClass = "";
+        item.maskClass = "";
     } else {
-      item.valueBrief = resolvedValue;
+        if (item.value.toLowerCase().startsWith(SECRET)) {
+            item.value = value.substring(SECRET.length);
+            item.valueBrief = item.value.replace(/./g, '\u2022'); // use U+2022
+            item.maskClass = (/^\u2022+$/).test(item.valueBrief) ? "masked" : "";
+        } else {
+            item.valueBrief = resolvedValue;
+            item.maskClass = "";
+        }
+        item.showItemClass = "";
+        item.showLinkClass = "hidden";
     }
-    item.showItemClass = "";
-    item.showLinkClass = "hidden";
-  }
 
-  return item;
+    return item;
 };
 
 const getShortenValue = (value, maxLength = 60) => {
@@ -509,27 +516,29 @@ const shareFolder = (folderId) => {
 };
 
 const copyText = (elementId) => {
-  const element = document.querySelector(`#${elementId}`);
-  const fullLink =  promptVarSwitch(element.dataset.value ?? "");
-  if (!fullLink) return;
-  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
-    const bulletEntityPattern = /^[\u2022]+$/;
-    if (bulletEntityPattern.test(el.innerHTML)) {
-      el.innerHTML = '\u2022'.repeat(fullLink.length);
-    } else {
-      el.innerHTML = fullLink;
-    }
-  });
-  navigator.clipboard.writeText(fullLink);
-  showToast("copied!", "success");
+    const element = document.querySelector(`#${elementId}`);
+    const fullLink = promptVarSwitch(element.dataset.value ?? "");
+    if (!fullLink) return;
+    const bullet = '\u2022';
+    Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
+        if (el.classList.contains('masked')) {
+            el.innerHTML = bullet.repeat(fullLink.length);
+        } else {
+            el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
+        }
+    });
+    navigator.clipboard.writeText(fullLink);
+    showToast("copied!", "success");
 };
 
 const openLink = (elementId) => {
-  const element = document.querySelector(`#${elementId}`);
-  const fullLink =  promptVarSwitch(element.dataset.value ?? "");
-  if (!fullLink) return;
-  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => el.innerHTML = fullLink);
-  window.open(fullLink, elementId);
+    const element = document.querySelector(`#${elementId}`);
+    const fullLink = promptVarSwitch(element.dataset.value ?? "");
+    if (!fullLink) return;
+    Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
+        el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
+    });
+    window.open(fullLink, elementId);
 };
 
 const showLsSection = () => {
@@ -814,7 +823,6 @@ const positionPopoverAbove = (el, popoverDiv) => {
 const addPopoverListeners = () => {
   const myPopover = getPopover();
   const popitElements = document.querySelectorAll(".popit");
-  const keyPattern = /^\[.*\]$/; // Start with [ and end with ]
   const valuePattern = /\[.*\]/; // Contain [ and ]
 
   popitElements.forEach((el) => {
@@ -822,21 +830,10 @@ const addPopoverListeners = () => {
       const itemContainer = el.closest('.item-container');
       const parentClasses = el.parentElement.classList;
 
-      const key = itemContainer.dataset.key ?? "";
       const value = itemContainer.dataset.value ?? "";
-
-      if (parentClasses.contains("key-display")) {
-        if (keyPattern.test(key)) { // Start with [ and end with ]
-          myPopover.textContent = key;
-          myPopover.showPopover();
-          // Wait for layout to update before positioning
-          requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
-        }
-      }
-
       if (parentClasses.contains("item-display") || parentClasses.contains("link-display")) {
         if (valuePattern.test(value)) {
-          myPopover.textContent = value;
+          myPopover.innerHTML = value;
           myPopover.showPopover();
           // Wait for layout to update before positioning
           requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
