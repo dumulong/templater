@@ -359,7 +359,7 @@ const prepItemForDisplay = (key, value) => {
         item.showLinkClass = "";
         item.maskClass = "";
     } else {
-        if (item.value.toLowerCase().startsWith(SECRET)) {
+        if (typeof item.value === "string" && item.value.toLowerCase().startsWith(SECRET)) {
             item.value = value.substring(SECRET.length);
             item.valueBrief = item.value.replace(/./g, '\u2022'); // use U+2022
             item.maskClass = (/^\u2022+$/).test(item.valueBrief) ? "masked" : "";
@@ -480,7 +480,7 @@ const promptVarSwitch = (link) => {
 };
 
 const resolveLinkVar = (link) => {
-
+  if (typeof link !== "string") return link;
   const placeholderRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
   const matchArray = Array.from(link.matchAll(placeholderRegExp)).map(x => x[0]); // Only take the "matched" variable name
   const matchSet = new Set(matchArray); // Make the variable name unique

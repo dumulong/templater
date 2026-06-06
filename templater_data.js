@@ -25,7 +25,8 @@ templaterData ["A tab"]  = {
              "COMMENT: The advantage of an array over an object is that it's always displayed, not in a folder" 
         ],
         "Other object" : {
-            "Note" : "But the same key can be reused in a nested object, and it will be displayed in the UI"
+            "Note" : "But the same key can be reused in a nested object, and it will be displayed in the UI",
+            "numbers" : 122232
         }
     },
 }
