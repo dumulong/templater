@@ -423,31 +423,26 @@ const displayObj = (obj, list, firstTime = true) => {
   let itemList = [];
 
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === "object") {
-      if (Array.isArray(value)) {
+    if (Array.isArray(value)) {
+      const labelItem = prepItemForDisplay(key, '');
+      itemList.push(itemTemplate.supplant(labelItem));
 
-        const labelItem = prepItemForDisplay(key, '');
-        itemList.push(itemTemplate.supplant(labelItem));
+      value.forEach((elm) => {
+        const item = prepItemForDisplay('', elm);
+        itemList.push(itemTemplate.supplant(item));
+      });
+    } else if (typeof value === "object") {
+      if (key !== "hidden") {
+        const children = displayObj(value, list, false);
 
-        value.forEach((elm) => {
-          const item = prepItemForDisplay('', elm);
-          itemList.push(itemTemplate.supplant(item));
-        });
-        
+        const folderObj = {
+          id: createUID(),
+          displayKey: key,
+          children: children.join(""),
+        };
 
-      } else {
-        if (key !== "hidden") {
-          const children = displayObj(value, list, false);
-
-          const folderObj = {
-            id: createUID(),
-            displayKey: key,
-            children: children.join(""),
-          };
-
-          const folderDisplay = folderTemplate.supplant(folderObj);
-          itemList.push(folderDisplay);
-        }
+        const folderDisplay = folderTemplate.supplant(folderObj);
+        itemList.push(folderDisplay);
       }
     } else {
       const item = prepItemForDisplay(key, value);
