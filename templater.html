@@ -189,6 +189,10 @@ body {
   display: none;
 }
 
+.invisible {
+  visibility : hidden;
+}
+
 .search-section {
   margin-bottom: 20px;
 }
@@ -260,14 +264,14 @@ body {
 
 <template id="item-template">
   <div class="item-container" id="itemContainer_{id}" data-value="{value}"">
-    <div class="key-display"><span id="displayKey_{id}" class="popit">{displayKey}</span> :</div>
+    <div class="key-display {showKeyClass}"><span id="displayKey_{id}" class="popit">{displayKey}</span> :</div>
     <div class="item-display {showItemClass}">
       <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
     </div>
     <div class="link-display {showLinkClass}">
       <a class="item-value-brief popit {maskClass}" href="javascript:openLink('itemContainer_{id}');">{valueBrief}</a>
     </div>
-    <button class="copy-button" onclick="copyText('itemContainer_{id}')">copy</button>
+    <button class="copy-button {showCopyClass}" onclick="copyText('itemContainer_{id}')">copy</button>
   </div>
 </template>
 
@@ -366,7 +370,8 @@ const prepItemForDisplay = (key, value) => {
         item.showItemClass = "";
         item.showLinkClass = "hidden";
     }
-
+    item.showKeyClass = key ?  '' : 'invisible';
+    item.showCopyClass = value ? '' : 'hidden';
     return item;
 };
 
@@ -419,17 +424,30 @@ const displayObj = (obj, list, firstTime = true) => {
 
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === "object") {
-      if (key !== "hidden") {
-        const children = displayObj(value, list, false);
+      if (Array.isArray(value)) {
 
-        const folderObj = {
-          id: createUID(),
-          displayKey: key,
-          children: children.join(""),
-        };
+        const labelItem = prepItemForDisplay(key, '');
+        itemList.push(itemTemplate.supplant(labelItem));
 
-        const folderDisplay = folderTemplate.supplant(folderObj);
-        itemList.push(folderDisplay);
+        value.forEach((elm) => {
+          const item = prepItemForDisplay('', elm);
+          itemList.push(itemTemplate.supplant(item));
+        });
+        
+
+      } else {
+        if (key !== "hidden") {
+          const children = displayObj(value, list, false);
+
+          const folderObj = {
+            id: createUID(),
+            displayKey: key,
+            children: children.join(""),
+          };
+
+          const folderDisplay = folderTemplate.supplant(folderObj);
+          itemList.push(folderDisplay);
+        }
       }
     } else {
       const item = prepItemForDisplay(key, value);
@@ -703,13 +721,20 @@ const search = (data, searchFor, exactMatch = false) => {
         result[prop] = data[prop];
       }
     } else {
-      if (isMatchingSearch(prop, searchFor, exactMatch)) {
-        result[prop] = data[prop];
+      if (Array.isArray(data[prop])) {
+        const matchingElements = data[prop].filter(el => isMatchingSearch(el, searchFor, exactMatch));
+        if (matchingElements.length > 0 || isMatchingSearch(prop, searchFor, exactMatch)) {
+          result[prop] = matchingElements;
+        }
       } else {
-        const currProp = prop;
-        const local = search(data[prop], searchFor, exactMatch);
-        if (Object.keys(local).length > 0) {
-          result[currProp] = local;
+        if (isMatchingSearch(prop, searchFor, exactMatch)) {
+          result[prop] = data[prop];
+        } else {
+          const currProp = prop;
+          const local = search(data[prop], searchFor, exactMatch);
+          if (Object.keys(local).length > 0) {
+            result[currProp] = local;
+          }
         }
       }
     }
