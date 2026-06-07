@@ -289,7 +289,11 @@ body {
           <div>
             <textarea id="lsData"></textarea>
           </div>
-          <div class="ls-note">Local Storage variable: "{templaterLSKey}"</div>
+          <div style="padding-top: 20px;"><b>NOTE:</b></div>
+          <div>The Local Storage variable "{templaterLSKey}" is used to store temporary templater data.</div>
+          <div>You can enter JSON data directly into the textarea and click on <b>Set</b> or <b>Merge</b> to save it.</div>
+          <div>You can also copy an item or a folder from other tabs by clicking on the item/folder's name while holding the Meta key (Command or Windows).</div>
+          <div>The JSON data will then be displayed on the <b>Temporary</b> tab.</div>
         </div>
       </div>
     </div>
@@ -326,7 +330,6 @@ const folderTemplate = document.querySelector("#folder-template").innerHTML;
 
 const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
-const hiddenFieldLabel = "hidden";
 
 const linkRegExp = /^http.*/;
 
@@ -339,7 +342,6 @@ const createUID = () => {
     return v.toString(16);
   });
 };
-
 
 const prepItemForDisplay = (key, value, uuid = '') => {
 
@@ -732,7 +734,7 @@ const showData = (data) => {
   globalData.registry.clear();
 
   const list = [];
-  parseObj(data, list);
+  parseObj(data, list); // Parse the object and its children to a list for easier access when replacing the values
 
   list.forEach((item, ndx) => {
     processReplace(item, ndx, list);
