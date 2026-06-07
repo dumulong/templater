@@ -255,11 +255,11 @@ body {
 
 <template id="folder-template">
   <div class="folder-toggle">
-    <div class="folder-name" onclick="toggleFolder(event, '{id}')">
+    <div class="folder-name" onclick="toggleFolder(event, '{uuid}')">
       <button class="folder-icon">&#128194;</button>{displayKey}
     </div>
   </div>
-  <div data-value="{displayKey}" data-children-uuid="{id}" class="item-list hidden-folder">{children}</div>
+  <div data-value="{displayKey}" data-children-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
 </template>
 
 <template id="item-template">
@@ -362,11 +362,10 @@ const prepItemForDisplay = (key, value, uuid, context = {}) => {
     const resolvedValue = replaceSquare(displayValue);
 
     const item = {};
-    item.id = createUID();
+    item.uuid = uuid;
     item.key = key;
     item.displayKey = key;
     item.value = displayValue;
-    item.uuid = uuid;
 
     if (linkRegExp.test(resolvedValue)) {
         item.valueBrief = getShortenValue(resolvedValue);
@@ -461,7 +460,7 @@ const displayObj = (obj, list, firstTime = true) => {
 
         const folderUUID = addToRegistry({[key]: value});
         const folderObj = {
-          id : folderUUID,
+          uuid : folderUUID,
           displayKey : key,
           children : children.join("")
         };
@@ -480,15 +479,15 @@ const displayObj = (obj, list, firstTime = true) => {
   return firstTime ? list : itemList;
 };
 
-const toggleFolder = (event, id) => {
-  const folder = document.querySelector(`[data-children-uuid="${id}"]`);
+const toggleFolder = (event, uuid) => {
+  const folder = document.querySelector(`[data-children-uuid="${uuid}"]`);
   if (!folder) return;
 
   if (event.metaKey) {
     event.preventDefault();
     event.stopPropagation();
 
-    const registeredObj = globalData.registry.get(id);
+    const registeredObj = globalData.registry.get(uuid);
     if (registeredObj) {
       const jsonText = JSON.stringify(registeredObj, null, 2);
       navigator.clipboard.writeText(jsonText);
