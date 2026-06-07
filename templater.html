@@ -254,17 +254,16 @@ body {
 
 <template id="folder-template">
   <div class="folder-toggle">
-    <div class="folder-name" onclick="toggleFolder('folder_{id}')">
+    <div class="folder-name" onclick="toggleFolder(event, '{id}')">
       <button class="folder-icon">&#128194;</button>{displayKey}
     </div>
-    <button class="share-button" onclick="shareFolder('folder_{id}')">Share Folder</button>
   </div>
-  <div data-value="{displayKey}" class="folder_{id} item-list hidden-folder">{children}</div>
+  <div data-value="{displayKey}" data-children-uuid="{id}" class="item-list hidden-folder">{children}</div>
 </template>
 
 <template id="item-template">
-  <div class="item-container" id="itemContainer_{id}" data-value="{value}"">
-    <div class="key-display {showKeyClass}"><span id="displayKey_{id}" class="popit">{displayKey}</span> :</div>
+  <div class="item-container" id="itemContainer_{id}" data-value="{value}">
+    <div class="key-display {showKeyClass}"><span id="displayKey_{id}" class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
     <div class="item-display {showItemClass}">
       <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
     </div>
@@ -342,7 +341,7 @@ const createUID = () => {
 };
 
 
-const prepItemForDisplay = (key, value) => {
+const prepItemForDisplay = (key, value, uuid = '') => {
 
     const SECRET = "secret:";
     const resolvedValue = resolveLinkVar(value);
@@ -352,6 +351,7 @@ const prepItemForDisplay = (key, value) => {
     item.key = key;
     item.displayKey = key;
     item.value = value;
+    item.uuid = uuid;
 
     if (linkRegExp.test(resolvedValue)) {
         item.valueBrief = getShortenValue(resolvedValue);
@@ -402,6 +402,12 @@ const processReplace = (item, ndx, list) => {
   });
 };
 
+const addToRegistry = (obj) => {
+  const entryUUID = createUID();
+  globalData.registry.set(entryUUID, obj);
+  return entryUUID;
+};
+
 // This function will replace the values between curly brackets {} 
 // with the previous values in the list, and it will do it recursively 
 // until there is no more value to replace or it reaches the max retry 
@@ -423,8 +429,11 @@ const displayObj = (obj, list, firstTime = true) => {
   let itemList = [];
 
   for (const [key, value] of Object.entries(obj)) {
+
+
     if (Array.isArray(value)) {
-      const labelItem = prepItemForDisplay(key, '');
+      const entryUUID = addToRegistry({[key]: value});
+      const labelItem = prepItemForDisplay(key, '', entryUUID);
       itemList.push(itemTemplate.supplant(labelItem));
 
       value.forEach((elm) => {
@@ -433,19 +442,22 @@ const displayObj = (obj, list, firstTime = true) => {
       });
     } else if (typeof value === "object") {
       if (key !== "hidden") {
+
         const children = displayObj(value, list, false);
 
+        const folderUUID = addToRegistry({[key]: value});
         const folderObj = {
-          id: createUID(),
-          displayKey: key,
-          children: children.join(""),
+          id : folderUUID,
+          displayKey : key,
+          children : children.join("")
         };
 
         const folderDisplay = folderTemplate.supplant(folderObj);
         itemList.push(folderDisplay);
       }
     } else {
-      const item = prepItemForDisplay(key, value);
+      const entryUUID = addToRegistry({[key]: value});
+      const item = prepItemForDisplay(key, value, entryUUID);
       const itemDisplay = itemTemplate.supplant(item);
       itemList.push(itemDisplay);
     }
@@ -454,9 +466,44 @@ const displayObj = (obj, list, firstTime = true) => {
   return firstTime ? list : itemList;
 };
 
-const toggleFolder = (folderId) => {
-  const folder = document.querySelector(`.${folderId}`);
-  folder.classList.toggle("hidden-folder");
+const toggleFolder = (event, id) => {
+  const folder = document.querySelector(`[data-children-uuid="${id}"]`);
+  if (!folder) return;
+
+  if (event.metaKey) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const registeredObj = globalData.registry.get(id);
+    if (registeredObj) {
+      const jsonText = JSON.stringify(registeredObj, null, 2);
+      navigator.clipboard.writeText(jsonText);
+      showToast("Folder object copied!", "success");
+    } else {
+      showToast("No registered folder object found.", "failure");
+    }
+  } else {
+    folder.classList.toggle("hidden-folder");
+  }
+};
+
+const clickLabel = (event, uuid) => {
+  if (!event.metaKey) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const registeredObj = globalData.registry.get(uuid);
+  if (!registeredObj) {
+    showToast("No registered object found for this label.", "failure");
+    return;
+  }
+
+  const jsonText = JSON.stringify(registeredObj, null, 2);
+  navigator.clipboard.writeText(jsonText);
+  showToast("Object copied!", "success");
 };
 
 const promptVarSwitch = (link) => {
@@ -519,15 +566,6 @@ const shareTab = (tabName) => {
   const resultStr = JSON.stringify(data, null, 2);
   navigator.clipboard.writeText(resultStr);
   showToast("Tab content copied!", "success");
-};
-
-const shareFolder = (folderId) => {
-  const folder = document.querySelector(`.${folderId}`);
-  const value = folder.dataset.value ?? "";
-  const result = search (templaterData[globalData.selectedTab], value, true); // TODO: find the actual foldder? not the first one?
-  const resultStr = JSON.stringify(result, null, 2);
-  navigator.clipboard.writeText(resultStr);
-  showToast("Folder content copied!", "success");
 };
 
 const copyText = (elementId) => {
@@ -691,12 +729,15 @@ const showData = (data) => {
   const searchSection = document.querySelector(".search-section");
   searchSection.classList.remove("hidden");
 
+  globalData.registry.clear();
+
   const list = [];
   parseObj(data, list);
 
   list.forEach((item, ndx) => {
     processReplace(item, ndx, list);
   });
+
   const displayList = displayObj(data, []);
   if (globalData.filteredList && Object.keys(globalData.filteredList).length > 0) {
     displayList.push(`<button class="share-button share-tab" onclick="shareTab('')">Share Search Results</button>`);
@@ -877,6 +918,7 @@ const globalData = {
   selectedTab: null,
   lsData: {},
   filteredList: {},
+  registry: new Map(),
 }
 
 resetView();
