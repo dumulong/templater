@@ -180,6 +180,7 @@ body {
   font-size: small;
   color: dimgray;
   margin-top: 3px;
+  padding-bottom: 3px;
 }
 .hidden {
   display: none;
@@ -290,10 +291,21 @@ body {
             <textarea id="lsData"></textarea>
           </div>
           <div style="padding-top: 20px;"><b>NOTE:</b></div>
-          <div>The Local Storage variable "{templaterLSKey}" is used to store temporary templater data.</div>
-          <div>You can enter JSON data directly into the textarea and click on <b>Set</b> or <b>Merge</b> to save it.</div>
-          <div>You can also copy an item or a folder from other tabs by clicking on the item/folder's name while holding the Meta key (Command or Windows).</div>
-          <div>The JSON data will then be displayed on the <b>Temporary</b> tab.</div>
+          <div class="ls-note">
+            The Local Storage variable "{templaterLSKey}" is used to store temporary templater data.
+          </div>
+          <div class="ls-note">
+            You can enter JSON data directly into the textarea and click on <b>Set</b> or <b>Merge</b> to save it.</br>
+            You can also copy an item or a folder from other tabs by clicking on the item/folder's name while holding the Meta key (Command or Windows).</br>
+            The JSON data will then be displayed on the <b>Temporary</b> tab.
+          </div>
+          <div class="ls-note">
+            There are 2 types of variables: <code>{variable}</code> and <code>[variable]</code>.</br>
+            The <code>{variable}</code> will be automatically replaced by other values from items in the same parent folder.<br>
+            The <code>[variable]</code> will trigger a prompt to ask for the value when you click on the copy button or the link. 
+            This replacement methodwill keep the values in the local storage, so the next time you use the same variable it will be pre-filled 
+            with the last value you entered, and you can choose to keep it or change it.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -343,16 +355,17 @@ const createUID = () => {
   });
 };
 
-const prepItemForDisplay = (key, value, uuid = '') => {
+const prepItemForDisplay = (key, value, uuid, context = {}) => {
 
     const SECRET = "secret:";
-    const resolvedValue = resolveLinkVar(value);
+    const displayValue = typeof value === "string" ? replaceCurly(value, context) : value;
+    const resolvedValue = replaceSquare(displayValue);
 
     const item = {};
     item.id = createUID();
     item.key = key;
     item.displayKey = key;
-    item.value = value;
+    item.value = displayValue;
     item.uuid = uuid;
 
     if (linkRegExp.test(resolvedValue)) {
@@ -383,25 +396,24 @@ const getShortenValue = (value, maxLength = 60) => {
     value.substring(0, maxLength / 2) + "[...]" + value.substring(value.length - maxLength / 2);
 };
 
-const parseObj = (item, list) => {
-  const keys = Object.keys(item);
-  keys.forEach((key) => {
-    if (Array.isArray(item[key])) {
-      item[key].forEach((child) => parseObj(child, list));
-    } else if (typeof item[key] === "object") {
-      parseObj(item[key], list);
-    }
-  });
-  list.push(item);
-};
+const replaceCurly = (value, context = {}) => {
+  if (typeof value !== "string") return value;
 
-const processReplace = (item, ndx, list) => {
-  const keys = Object.keys(item);
-  keys.forEach((key) => {
-    if (typeof item[key] !== "object") {
-      item[key] = replace(item[key], ndx, list);
-    }
-  });
+  let result = value;
+  const placeholderRegExp = /\{([^{}]+)\}/g;
+  const maxRetry = 10;
+  let retry = 0;
+
+  while (retry++ < maxRetry && placeholderRegExp.test(result)) {
+    result = result.replace(placeholderRegExp, (match, key) => {
+      const replacement = context && context[key];
+      return replacement !== undefined && typeof replacement !== "object"
+        ? String(replacement)
+        : match;
+    });
+  }
+
+  return result;
 };
 
 const addToRegistry = (obj) => {
@@ -439,7 +451,7 @@ const displayObj = (obj, list, firstTime = true) => {
       itemList.push(itemTemplate.supplant(labelItem));
 
       value.forEach((elm) => {
-        const item = prepItemForDisplay('', elm);
+        const item = prepItemForDisplay('', elm, entryUUID, obj);
         itemList.push(itemTemplate.supplant(item));
       });
     } else if (typeof value === "object") {
@@ -459,7 +471,7 @@ const displayObj = (obj, list, firstTime = true) => {
       }
     } else {
       const entryUUID = addToRegistry({[key]: value});
-      const item = prepItemForDisplay(key, value, entryUUID);
+      const item = prepItemForDisplay(key, value, entryUUID, obj);
       const itemDisplay = itemTemplate.supplant(item);
       itemList.push(itemDisplay);
     }
@@ -508,7 +520,7 @@ const clickLabel = (event, uuid) => {
   showToast("Object copied!", "success");
 };
 
-const promptVarSwitch = (link) => {
+const promptReplaceSquare = (link) => {
   const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
   const matchArray = Array.from(link.matchAll(varRegExp)).map(x => x[0]); // Only take the "matched" variable name
   const matchSet = new Set(matchArray); // Make the variable name unique
@@ -528,7 +540,7 @@ const promptVarSwitch = (link) => {
   return link;
 };
 
-const resolveLinkVar = (link) => {
+const replaceSquare = (link) => {
   if (typeof link !== "string") return link;
   const placeholderRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
   const matchArray = Array.from(link.matchAll(placeholderRegExp)).map(x => x[0]); // Only take the "matched" variable name
@@ -572,7 +584,7 @@ const shareTab = (tabName) => {
 
 const copyText = (elementId) => {
     const element = document.querySelector(`#${elementId}`);
-    const fullLink = promptVarSwitch(element.dataset.value ?? "");
+    const fullLink = promptReplaceSquare(element.dataset.value ?? "");
     if (!fullLink) return;
     const bullet = '\u2022';
     Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
@@ -588,7 +600,7 @@ const copyText = (elementId) => {
 
 const openLink = (elementId) => {
     const element = document.querySelector(`#${elementId}`);
-    const fullLink = promptVarSwitch(element.dataset.value ?? "");
+    const fullLink = promptReplaceSquare(element.dataset.value ?? "");
     if (!fullLink) return;
     Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
         el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
@@ -732,13 +744,6 @@ const showData = (data) => {
   searchSection.classList.remove("hidden");
 
   globalData.registry.clear();
-
-  const list = [];
-  parseObj(data, list); // Parse the object and its children to a list for easier access when replacing the values
-
-  list.forEach((item, ndx) => {
-    processReplace(item, ndx, list);
-  });
 
   const displayList = displayObj(data, []);
   if (globalData.filteredList && Object.keys(globalData.filteredList).length > 0) {
