@@ -263,15 +263,15 @@ body {
 </template>
 
 <template id="item-template">
-  <div class="item-container" id="itemContainer_{id}" data-value="{value}">
-    <div class="key-display {showKeyClass}"><span id="displayKey_{id}" class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
+  <div class="item-container" data-item-uuid="{uuid}" data-value="{value}">
+    <div class="key-display {showKeyClass}"><span class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
     <div class="item-display {showItemClass}">
       <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
     </div>
     <div class="link-display {showLinkClass}">
-      <a class="item-value-brief popit {maskClass}" href="javascript:openLink('itemContainer_{id}');">{valueBrief}</a>
+      <a class="item-value-brief popit {maskClass}" href="javascript:openLink('{uuid}');">{valueBrief}</a>
     </div>
-    <button class="copy-button {showCopyClass}" onclick="copyText('itemContainer_{id}')">copy</button>
+    <button class="copy-button {showCopyClass}" onclick="copyText('{uuid}')">copy</button>
   </div>
 </template>
 
@@ -450,7 +450,7 @@ const displayObj = (obj, list, firstTime = true) => {
       itemList.push(itemTemplate.supplant(labelItem));
 
       value.forEach((elm) => {
-        const item = prepItemForDisplay('', elm, entryUUID, obj);
+        const item = prepItemForDisplay('', elm, createUID(), obj); // no need to register
         itemList.push(itemTemplate.supplant(item));
       });
     } else if (typeof value === "object") {
@@ -581,8 +581,8 @@ const shareTab = (tabName) => {
   showToast("Tab content copied!", "success");
 };
 
-const copyText = (elementId) => {
-    const element = document.querySelector(`#${elementId}`);
+const copyText = (uuid) => {
+    const element = document.querySelector(`[data-item-uuid="${uuid}"]`);
     const fullLink = promptReplaceSquare(element.dataset.value ?? "");
     if (!fullLink) return;
     const bullet = '\u2022';
@@ -597,14 +597,14 @@ const copyText = (elementId) => {
     showToast("copied!", "success");
 };
 
-const openLink = (elementId) => {
-    const element = document.querySelector(`#${elementId}`);
+const openLink = (uuid) => {
+    const element = document.querySelector(`[data-item-uuid="${uuid}"]`);
     const fullLink = promptReplaceSquare(element.dataset.value ?? "");
     if (!fullLink) return;
     Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
         el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
     });
-    window.open(fullLink, elementId);
+    window.open(fullLink, uuid);
 };
 
 const showLsSection = () => {
