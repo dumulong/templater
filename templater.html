@@ -259,11 +259,11 @@ body {
       <button class="folder-icon">&#128194;</button>{displayKey}
     </div>
   </div>
-  <div data-value="{displayKey}" data-children-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
+  <div data-value="{displayKey}" data-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
 </template>
 
 <template id="item-template">
-  <div class="item-container" data-item-uuid="{uuid}" data-value="{value}">
+  <div class="item-container" data-uuid="{uuid}" data-value="{value}">
     <div class="key-display {showKeyClass}"><span class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
     <div class="item-display {showItemClass}">
       <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
@@ -450,7 +450,8 @@ const displayObj = (obj, list, firstTime = true) => {
       itemList.push(itemTemplate.supplant(labelItem));
 
       value.forEach((elm) => {
-        const item = prepItemForDisplay('', elm, createUID(), obj); // no need to register
+        const elmUUID = addToRegistry({'': elm});
+        const item = prepItemForDisplay('', elm, elmUUID, obj);
         itemList.push(itemTemplate.supplant(item));
       });
     } else if (typeof value === "object") {
@@ -480,7 +481,7 @@ const displayObj = (obj, list, firstTime = true) => {
 };
 
 const toggleFolder = (event, uuid) => {
-  const folder = document.querySelector(`[data-children-uuid="${uuid}"]`);
+  const folder = document.querySelector(`[data-uuid="${uuid}"]`);
   if (!folder) return;
 
   if (event.metaKey) {
@@ -582,7 +583,7 @@ const shareTab = (tabName) => {
 };
 
 const copyText = (uuid) => {
-    const element = document.querySelector(`[data-item-uuid="${uuid}"]`);
+    const element = document.querySelector(`[data-uuid="${uuid}"]`);
     const fullLink = promptReplaceSquare(element.dataset.value ?? "");
     if (!fullLink) return;
     const bullet = '\u2022';
@@ -598,7 +599,7 @@ const copyText = (uuid) => {
 };
 
 const openLink = (uuid) => {
-    const element = document.querySelector(`[data-item-uuid="${uuid}"]`);
+    const element = document.querySelector(`[data-uuid="${uuid}"]`);
     const fullLink = promptReplaceSquare(element.dataset.value ?? "");
     if (!fullLink) return;
     Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
@@ -892,16 +893,19 @@ const positionPopoverAbove = (el, popoverDiv) => {
 const addPopoverListeners = () => {
   const myPopover = getPopover();
   const popitElements = document.querySelectorAll(".popit");
-  const valuePattern = /\[.*\]/; // Contain [ and ]
+  const squarePattern = /\[.*\]/; // Contain [ and ]
+  const curlyPattern = /\{.*\}/; // Contain { and }
 
   popitElements.forEach((el) => {
     el.addEventListener("mouseenter", function () {
       const itemContainer = el.closest('.item-container');
       const parentClasses = el.parentElement.classList;
 
-      const value = itemContainer.dataset.value ?? "";
+      //const value = itemContainer.dataset.value ?? "";
+      const uuid = itemContainer.dataset["uuid"];
       if (parentClasses.contains("item-display") || parentClasses.contains("link-display")) {
-        if (valuePattern.test(value)) {
+        const value = Object.values(globalData.registry.get(uuid))[0];
+        if (squarePattern.test(value) || curlyPattern.test(value)) {
           myPopover.innerHTML = value;
           myPopover.showPopover();
           // Wait for layout to update before positioning
