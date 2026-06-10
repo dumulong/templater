@@ -12,18 +12,13 @@ templaterData ["A tab"]  = {
     },
     "Other features" : {
         "Secret" : "secret:mySuperSecretPassword123",
-        "hidden" : {
-            "hidden note" : "An object with 'hidden' for key will not be displayed in the UI, but its values can still be used in subsequent word replacements.",
-            "hidden note2" : "This feature allows you to build link values that are composed of multiple parts, without showing those parts in the UI."
-        },
-        "Hiding" : "{hidden note}<br>{hidden note2}",
-        "Note" : "This is the first 'note' key, and it will NOT be displayed in the UI",
-        "Note" : "A repeating key in an object will be overritten, not showing in the UI",
         "Displaying an array of values" : [
              "http://example.com",
              "NOTE: An array is a good way to add a note or a comment together with a value",
              "COMMENT: The advantage of an array over an object is that it's always displayed, not in a folder" 
         ],
+        "Note" : "This is the first 'note' key, and it will NOT be displayed in the UI",
+        "Note" : "A repeating key in an object will be overritten, not showing in the UI",
         "Other object" : {
             "Note" : "But the same key can be reused in a nested object, and it will be displayed in the UI",
             "numbers" : 122232

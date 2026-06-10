@@ -135,7 +135,7 @@ describe('templater.html JavaScript', () => {
   it('toggleFolder toggles folder class and copies object with meta key', async () => {
     const uuid = window.addToRegistry({ foo: 'bar' });
     const folder = window.document.createElement('div');
-    folder.dataset.childrenUuid = uuid;
+    folder.dataset.uuid = uuid;
     folder.className = 'item-list hidden-folder';
     window.document.body.appendChild(folder);
 

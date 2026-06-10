@@ -455,20 +455,15 @@ const displayObj = (obj, list, firstTime = true) => {
         itemList.push(itemTemplate.supplant(item));
       });
     } else if (typeof value === "object") {
-      if (key !== "hidden") {
-
         const children = displayObj(value, list, false);
-
         const folderUUID = addToRegistry({[key]: value});
         const folderObj = {
           uuid : folderUUID,
           displayKey : key,
           children : children.join("")
         };
-
         const folderDisplay = folderTemplate.supplant(folderObj);
         itemList.push(folderDisplay);
-      }
     } else {
       const entryUUID = addToRegistry({[key]: value});
       const item = prepItemForDisplay(key, value, entryUUID, obj);
