@@ -269,7 +269,7 @@ body {
       <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
     </div>
     <div class="link-display {showLinkClass}">
-      <a class="item-value-brief popit {maskClass}" href="javascript:openLink('{uuid}');">{valueBrief}</a>
+      <a class="item-value-brief popit {maskClass}" href="#" onclick="javascript:openLink(event, '{uuid}');">{valueBrief}</a>
     </div>
     <button class="copy-button {showCopyClass}" onclick="copyText(event, '{uuid}')">copy</button>
   </div>
@@ -302,8 +302,8 @@ body {
           <div class="ls-note">
             There are 2 types of variables: <code>{variable}</code> and <code>[variable]</code>.</br>
             The <code>{variable}</code> will be automatically replaced by other values from items in the same parent folder.<br>
-            The <code>[variable]</code> will trigger a prompt to ask for the value when you click on the copy button or the link. 
-            This replacement methodwill keep the values in the local storage, so the next time you use the same variable it will be pre-filled 
+            The <code>[variable]</code> will trigger a prompt to ask for replacement values when you click on the copy button or the link (can be bypassed by holding the meta key). 
+            This replacement method will keep the values in the local storage, so the next time you use the same variable it will be pre-filled 
             with the last value you entered, and you can choose to keep it or change it.</div>
           </div>
         </div>
@@ -578,13 +578,9 @@ const shareTab = (tabName) => {
 };
 
 const copyText = (event,uuid) => {
-  let fullLink = "";
   const element = document.querySelector(`[data-uuid="${uuid}"]`);
-  if (event.metaKey) {
-    fullLink = replaceSquare(element.dataset.value ?? "");
-  } else {
-    fullLink = promptReplaceSquare(element.dataset.value ?? "");
-  }
+  const fnc = event.metaKey ? replaceSquare : promptReplaceSquare;
+  const fullLink = fnc(element.dataset.value ?? "");
   if (!fullLink) return;
   const bullet = '\u2022';
   Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
@@ -598,17 +594,25 @@ const copyText = (event,uuid) => {
   showToast("copied!", "success");
 };
 
-const openLink = (uuid) => {
-    const element = document.querySelector(`[data-uuid="${uuid}"]`);
-    const fullLink = promptReplaceSquare(element.dataset.value ?? "");
-    if (!fullLink) return;
-    Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
-        el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
-    });
-    window.open(fullLink, uuid);
+const openLink = (event,uuid) => {
+  event.preventDefault();
+  const element = document.querySelector(`[data-uuid="${uuid}"]`);
+  const fnc = event.metaKey ? replaceSquare : promptReplaceSquare;
+  const fullLink = fnc(element.dataset.value ?? "");
+  if (!fullLink) return;
+  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
+      el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
+  });
+  window.open(fullLink, uuid);
 };
+const clearActiveTab = () => {
+  Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
+    button.classList.remove("active-tab");
+  });
+};  
 
 const showLsSection = () => {
+  clearActiveTab();
   const searchSection = document.querySelector(".search-section");
   searchSection.classList.add("hidden");
   const contentDiv = document.querySelector(".content");
@@ -720,9 +724,9 @@ const selectTab = (tab) => {
     globalData.selectedTab = Object.keys(templaterData)[0];
   } else {
     showToast(`No data available for the selected tab!`, "error");
-    return
+    return;
   }
-
+  
   Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
     if (button.textContent === globalData.selectedTab) {
       button.classList.add("active-tab");
@@ -808,6 +812,7 @@ const doDelayedSearch = (searchFor) => {
   }
 
   timeout = setTimeout(() => {
+    clearActiveTab();
     //globalData.filteredList = search(templaterData[globalData.selectedTab], searchFor); //Search for selected tab only
     globalData.filteredList = search(templaterData, searchFor); //General search
     showData(globalData.filteredList);
