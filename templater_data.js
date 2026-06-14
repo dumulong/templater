@@ -15,13 +15,14 @@ templaterData ["A tab"]  = {
         "Displaying an array of values" : [
              "http://example.com",
              "NOTE: An array is a good way to add a note or a comment together with a value",
-             "COMMENT: The advantage of an array over an object is that it's always displayed, not in a folder" 
+             "COMMENT: The advantage of an array over an object is that it's always displayed, not in a folder" ,
+             { test : "This is an object inside an array, and it will be displayed as a folder, but the key 'test' will not be shown in the UI" }
         ],
         "Note" : "This is the first 'note' key, and it will NOT be displayed in the UI",
         "Note" : "A repeating key in an object will be overritten, not showing in the UI",
         "Other object" : {
             "Note" : "But the same key can be reused in a nested object, and it will be displayed in the UI",
-            "numbers" : 122232
+            "numbers" : 122232,
         }
     },
 }

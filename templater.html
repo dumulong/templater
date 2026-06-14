@@ -399,12 +399,12 @@ const replaceCurly = (value, context = {}) => {
   if (typeof value !== "string") return value;
 
   let result = value;
-  const placeholderRegExp = /\{([^{}]+)\}/g;
+  const curlyRegExp = /\{([^{}]+)\}/g;
   const maxRetry = 10;
   let retry = 0;
 
-  while (retry++ < maxRetry && placeholderRegExp.test(result)) {
-    result = result.replace(placeholderRegExp, (match, key) => {
+  while (retry++ < maxRetry && curlyRegExp.test(result)) {
+    result = result.replace(curlyRegExp, (match, key) => {
       const replacement = context && context[key];
       return replacement !== undefined && typeof replacement !== "object"
         ? String(replacement)
@@ -419,23 +419,6 @@ const addToRegistry = (obj) => {
   const entryUUID = createUID();
   globalData.registry.set(entryUUID, obj);
   return entryUUID;
-};
-
-// This function will replace the values between curly brackets {} 
-// with the previous values in the list, and it will do it recursively 
-// until there is no more value to replace or it reaches the max retry 
-// limit (to avoid infinite loop)
-const replace = (value, ndx, list) => {
-  const maxRetry = 10;
-  let retry = 0;
-
-  while (retry++ < maxRetry && `${value}`.match(/\{([^{}]*)\}/g)) {
-    for (let i = ndx; i >= 0; i--) {
-      value = value.supplant(list[i]);
-    }
-  }
-
-  return value;
 };
 
 const displayObj = (obj, list, firstTime = true) => {
