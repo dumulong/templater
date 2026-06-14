@@ -72,10 +72,18 @@ body {
   cursor: pointer;
 }
 
-.item-list {
+.folder-indent {
   margin-left: 10px;
   padding-left: 20px;
   border-left: 1px solid #e0e0e0;
+  margin-bottom: 10px;
+}
+
+.list-indent {
+  margin-left: 3px;
+  padding-left: 80px;
+  border-left: 1px solid #e0e0e0;
+  margin-bottom: 10px;
 }
 
 .item-container {
@@ -259,11 +267,11 @@ body {
       <button class="folder-icon">&#128194;</button>{key}
     </div>
   </div>
-  <div data-value="{key}" data-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
+  <div data-value="{key}" data-uuid="{uuid}" class="folder-indent hidden-folder">{children}</div>
 </template>
 
 <template id="children-list-template">
-  <div class="item-list">{children}</div>
+  <div class="list-indent">{children}</div>
 </template>
 
 <template id="item-key-template">

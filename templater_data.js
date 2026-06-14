@@ -16,10 +16,10 @@ templaterData ["A tab"]  = {
              "http://example.com",
              "NOTE: An array is a good way to add a note or a comment together with a value",
              "COMMENT: The advantage of an array over an object is that it's always displayed, not in a folder" ,
-             { "Simple object" : "This is an object inside an array" },
+             { "NOTE" : "This is an object inside an array" },
              "Just an extra element after having an object in the array, to show that you can mix different types of values in the same array",
-             { "Object of object" : {
-                 "Note" : "This is an object inside an object, inside an array",
+             { "Folder inside an array" : {
+                 "NOTE" : "This is an object inside an object, inside an array",
              }}
         ],
         "Note" : "This is the first 'note' key, and it will NOT be displayed in the UI",
