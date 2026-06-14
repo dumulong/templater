@@ -354,6 +354,7 @@ String.prototype.supplant = function (o = {}) {
 
 <script>
 
+const SECRET = "secret:";
 const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
 
@@ -375,7 +376,6 @@ const displayItem = (key, value, uuid, context = {}) => {
     const itemValueTemplate = document.querySelector("#item-value-template").innerHTML;
     const itemLinkTemplate = document.querySelector("#item-link-template").innerHTML;
 
-    const SECRET = "secret:";
     const curlyFreeValue = typeof value === "string" ? replaceCurly(value, context) : value;
     const resolvedValue = replaceSquare(curlyFreeValue);
 
@@ -584,20 +584,12 @@ const shareTab = (tabName) => {
   showToast("Tab content copied!", "success");
 };
 
-const copyText = (event,uuid) => {
+const copyText = (event, uuid) => {
   const element = document.querySelector(`[data-uuid="${uuid}"]`);
-  const fnc = event.metaKey ? replaceSquare : promptReplaceSquare;
+  const fnc = event.metaKey ? replaceSquare : promptReplaceSquare; // Override the prompt if Meta key is held
   const fullLink = fnc(element.dataset.value ?? "");
   if (!fullLink) return;
-  const bullet = '\u2022';
-  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
-      if (el.classList.contains('masked')) {
-          el.innerHTML = bullet.repeat(fullLink.length);
-      } else {
-          el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
-      }
-  });
-  navigator.clipboard.writeText(fullLink);
+  navigator.clipboard.writeText(fullLink.substring(SECRET.length));
   showToast("copied!", "success");
 };
 
