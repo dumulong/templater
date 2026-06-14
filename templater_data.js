@@ -25,7 +25,7 @@ templaterData ["A tab"]  = {
         "Note" : "This is the first 'note' key, and it will NOT be displayed in the UI",
         "Note" : "A repeating key in an object will be overritten, not showing in the UI",
         "Other object" : {
-            "Note" : "But the same key can be reused in a nested object, and it will be displayed in the UI",
+            "Note" : "But the same key (ex: \"Note\") can be reused in a nested object, and it will be displayed in the UI",
             "numbers" : 122232,
         }
     },
