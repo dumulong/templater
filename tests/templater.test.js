@@ -112,8 +112,12 @@ describe('templater.html JavaScript', () => {
 
   it('displayItem applies replacement from object context', () => {
     const item = window.displayItem('greeting', 'Hello {name}', '', { name: 'Bob' });
-    expect(item.value).toBe('Hello Bob');
-    expect(item.valueBrief).toBe('Hello Bob');
+    const container = window.document.createElement('div');
+    container.innerHTML = item;
+
+    const renderedItem = container.querySelector('.item-container');
+    expect(renderedItem.getAttribute('data-value')).toBe('Hello Bob');
+    expect(renderedItem.textContent).toContain('Hello Bob');
   });
 
   it('replaceSquare substitutes bracket values from globalData.lsData', () => {
