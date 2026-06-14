@@ -256,10 +256,10 @@ body {
 <template id="folder-template">
   <div class="folder-toggle">
     <div class="folder-name" onclick="toggleFolder(event, '{uuid}')">
-      <button class="folder-icon">&#128194;</button>{displayKey}
+      <button class="folder-icon">&#128194;</button>{key}
     </div>
   </div>
-  <div data-value="{displayKey}" data-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
+  <div data-value="{key}" data-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
 </template>
 
 <template id="children-list-template">
@@ -267,7 +267,7 @@ body {
 </template>
 
 <template id="item-key-template">
-  <div class="key-display"><span class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
+  <div class="key-display"><span class="popit" onclick="clickLabel(event, '{uuid}')">{key}</span> :</div>
 </template>
 
 <template id="item-value-template">
@@ -354,8 +354,6 @@ String.prototype.supplant = function (o = {}) {
 
 <script>
 
-const folderTemplate = document.querySelector("#folder-template").innerHTML;
-
 const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
 
@@ -372,7 +370,6 @@ const createUID = () => {
 };
 
 const displayItem = (key, value, uuid, context = {}) => {
-
     const itemTemplate = document.querySelector("#item-template").innerHTML;
     const itemKeyTemplate = document.querySelector("#item-key-template").innerHTML;
     const itemValueTemplate = document.querySelector("#item-value-template").innerHTML;
@@ -390,7 +387,7 @@ const displayItem = (key, value, uuid, context = {}) => {
     item.itemLinkTemplate = "";
 
     if (key) {
-        item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, displayKey: key });
+        item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, key });
     }
 
     if (linkRegExp.test(resolvedValue)) {
@@ -409,8 +406,12 @@ const displayItem = (key, value, uuid, context = {}) => {
     return itemTemplate.supplant(item);
 };
 
-const displayList = (childrenList) => {
+const displayFolder = (key, children, uuid) => {  
+  const folderTemplate = document.querySelector("#folder-template").innerHTML;
+  return folderTemplate.supplant({key, children, uuid});
+}
 
+const displayList = (childrenList) => {
     const childrenListTemplate = document.querySelector("#children-list-template").innerHTML;
     return childrenListTemplate.supplant({ children: childrenList.join("") });
 }
@@ -471,13 +472,7 @@ const displayObj = (obj, list, firstTime = false) => {
     } else if (typeof value === "object") {
         const children = displayObj(value, list);
         const folderUUID = addToRegistry({[key]: value});
-        const folderObj = {
-          uuid : folderUUID,
-          displayKey : key,
-          children : children.join("")
-        };
-        const folderDisplay = folderTemplate.supplant(folderObj);
-        itemList.push(folderDisplay);
+        itemList.push(displayFolder(key, children.join(""), folderUUID));
     } else {
       const entryUUID = addToRegistry({[key]: value});
       itemList.push(displayItem(key, value, entryUUID, obj));
