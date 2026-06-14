@@ -69,7 +69,7 @@ const loadTemplater = async () => {
   }
 
   const exportNames = [
-    'prepItemForDisplay',
+    'displayItem',
     'replaceCurly',
     'replaceSquare',
     'promptReplaceSquare',
@@ -94,7 +94,7 @@ describe('templater.html JavaScript', () => {
   });
 
   it('loads templater functions', () => {
-    expect(typeof window.prepItemForDisplay).toBe('function');
+    expect(typeof window.displayItem).toBe('function');
     expect(typeof window.replaceCurly).toBe('function');
     expect(typeof window.replaceSquare).toBe('function');
     expect(typeof window.addToRegistry).toBe('function');
@@ -110,8 +110,8 @@ describe('templater.html JavaScript', () => {
     expect(result).toBe('Hello {unknown}!');
   });
 
-  it('prepItemForDisplay applies replacement from object context', () => {
-    const item = window.prepItemForDisplay('greeting', 'Hello {name}', '', { name: 'Bob' });
+  it('displayItem applies replacement from object context', () => {
+    const item = window.displayItem('greeting', 'Hello {name}', '', { name: 'Bob' });
     expect(item.value).toBe('Hello Bob');
     expect(item.valueBrief).toBe('Hello Bob');
   });

@@ -262,16 +262,33 @@ body {
   <div data-value="{displayKey}" data-uuid="{uuid}" class="item-list hidden-folder">{children}</div>
 </template>
 
-<template id="item-template">
-  <div class="item-container" data-uuid="{uuid}" data-value="{value}">
-    <div class="key-display {showKeyClass}"><span class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
-    <div class="item-display {showItemClass}">
+<template id="children-list-template">
+  <div class="item-list">{children}</div>
+</template>
+
+<template id="item-key-template">
+  <div class="key-display"><span class="popit" onclick="clickLabel(event, '{uuid}')">{displayKey}</span> :</div>
+</template>
+
+<template id="item-value-template">
+    <div class="item-display">
       <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
     </div>
-    <div class="link-display {showLinkClass}">
-      <a class="item-value-brief popit {maskClass}" href="#" onclick="javascript:openLink(event, '{uuid}');">{valueBrief}</a>
+    <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
+</template>
+
+<template id="item-link-template">
+    <div class="link-display">
+      <a class="item-value-brief popit" href="#" onclick="javascript:openLink(event, '{uuid}');">{valueBrief}</a>
     </div>
-    <button class="copy-button {showCopyClass}" onclick="copyText(event, '{uuid}')">copy</button>
+    <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
+  </template>
+
+<template id="item-template">
+  <div class="item-container" data-uuid="{uuid}" data-value="{value}">
+    {itemKeyTemplate}
+    {itemValueTemplate}
+    {itemLinkTemplate}
   </div>
 </template>
 
@@ -337,7 +354,6 @@ String.prototype.supplant = function (o = {}) {
 
 <script>
 
-const itemTemplate = document.querySelector("#item-template").innerHTML;
 const folderTemplate = document.querySelector("#folder-template").innerHTML;
 
 const templaterLSKey = "templaterLS";
@@ -355,39 +371,49 @@ const createUID = () => {
   });
 };
 
-const prepItemForDisplay = (key, value, uuid, context = {}) => {
+const displayItem = (key, value, uuid, context = {}) => {
+
+    const itemTemplate = document.querySelector("#item-template").innerHTML;
+    const itemKeyTemplate = document.querySelector("#item-key-template").innerHTML;
+    const itemValueTemplate = document.querySelector("#item-value-template").innerHTML;
+    const itemLinkTemplate = document.querySelector("#item-link-template").innerHTML;
 
     const SECRET = "secret:";
-    const displayValue = typeof value === "string" ? replaceCurly(value, context) : value;
-    const resolvedValue = replaceSquare(displayValue);
+    const curlyFreeValue = typeof value === "string" ? replaceCurly(value, context) : value;
+    const resolvedValue = replaceSquare(curlyFreeValue);
 
     const item = {};
     item.uuid = uuid;
-    item.key = key;
-    item.displayKey = key;
-    item.value = displayValue;
+    item.value = curlyFreeValue;
+    item.itemKeyTemplate = "";
+    item.itemValueTemplate = "";
+    item.itemLinkTemplate = "";
+
+    if (key) {
+        item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, displayKey: key });
+    }
 
     if (linkRegExp.test(resolvedValue)) {
-        item.valueBrief = getShortenValue(resolvedValue);
-        item.showItemClass = "hidden";
-        item.showLinkClass = "";
-        item.maskClass = "";
+        const content = { uuid, valueBrief: getShortenValue(resolvedValue) }
+        item.itemLinkTemplate = itemLinkTemplate.supplant(content);
     } else {
         if (typeof item.value === "string" && item.value.toLowerCase().startsWith(SECRET)) {
-            item.value = value.substring(SECRET.length);
-            item.valueBrief = item.value.replace(/./g, '\u2022'); // use U+2022
-            item.maskClass = (/^\u2022+$/).test(item.valueBrief) ? "masked" : "";
+          valueBrief = value.substring(SECRET.length).replace(/./g, '\u2022');
+          const content = { uuid, valueBrief, maskClass : "masked"}
+          item.itemValueTemplate = itemValueTemplate.supplant(content);
         } else {
-            item.valueBrief = resolvedValue;
-            item.maskClass = "";
+          const content = { uuid, valueBrief: resolvedValue }
+          item.itemValueTemplate = itemValueTemplate.supplant(content);
         }
-        item.showItemClass = "";
-        item.showLinkClass = "hidden";
     }
-    item.showKeyClass = key ?  '' : 'invisible';
-    item.showCopyClass = value ? '' : 'hidden';
-    return item;
+    return itemTemplate.supplant(item);
 };
+
+const displayList = (childrenList) => {
+
+    const childrenListTemplate = document.querySelector("#children-list-template").innerHTML;
+    return childrenListTemplate.supplant({ children: childrenList.join("") });
+}
 
 const getShortenValue = (value, maxLength = 60) => {
   return value.length < maxLength ? 
@@ -421,24 +447,29 @@ const addToRegistry = (obj) => {
   return entryUUID;
 };
 
-const displayObj = (obj, list, firstTime = true) => {
+const displayObj = (obj, list, firstTime = false) => {
   let itemList = [];
 
   for (const [key, value] of Object.entries(obj)) {
 
-
     if (Array.isArray(value)) {
       const entryUUID = addToRegistry({[key]: value});
-      const labelItem = prepItemForDisplay(key, '', entryUUID);
-      itemList.push(itemTemplate.supplant(labelItem));
+      itemList.push(displayItem(key, '', entryUUID, obj));
 
+      const childrenList = [];
       value.forEach((elm) => {
-        const elmUUID = addToRegistry({'': elm});
-        const item = prepItemForDisplay('', elm, elmUUID, obj);
-        itemList.push(itemTemplate.supplant(item));
+        if (typeof elm === 'object' && elm !== null) {
+          const childItems = displayObj(elm, []);
+          childrenList.push(...childItems);
+          
+        } else {
+          const elmUUID = addToRegistry({ '': elm });
+          childrenList.push(displayItem('', elm, elmUUID, obj));
+        }
       });
+      itemList.push(displayList(childrenList));
     } else if (typeof value === "object") {
-        const children = displayObj(value, list, false);
+        const children = displayObj(value, list);
         const folderUUID = addToRegistry({[key]: value});
         const folderObj = {
           uuid : folderUUID,
@@ -449,9 +480,7 @@ const displayObj = (obj, list, firstTime = true) => {
         itemList.push(folderDisplay);
     } else {
       const entryUUID = addToRegistry({[key]: value});
-      const item = prepItemForDisplay(key, value, entryUUID, obj);
-      const itemDisplay = itemTemplate.supplant(item);
-      itemList.push(itemDisplay);
+      itemList.push(displayItem(key, value, entryUUID, obj));
     }
   }
   list = list.concat(itemList);
@@ -732,14 +761,14 @@ const showData = (data) => {
 
   globalData.registry.clear();
 
-  const displayList = displayObj(data, []);
+  const display = displayObj(data, [], true);
   if (globalData.filteredList && Object.keys(globalData.filteredList).length > 0) {
-    displayList.push(`<button class="share-button share-tab" onclick="shareTab('')">Share Search Results</button>`);
+    display.push(`<button class="share-button share-tab" onclick="shareTab('')">Share Search Results</button>`);
   } else {
-    displayList.push(`<button class="share-button share-tab" onclick="shareTab('${globalData.selectedTab}')">Share Tab</button>`);
+    display.push(`<button class="share-button share-tab" onclick="shareTab('${globalData.selectedTab}')">Share Tab</button>`);
   }
   const contentDiv = document.querySelector(".content");
-  contentDiv.innerHTML = displayList.join("");
+  contentDiv.innerHTML = display.join("");
 };
 
 const search = (data, searchFor, exactMatch = false) => {
