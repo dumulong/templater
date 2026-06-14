@@ -12,6 +12,7 @@ templaterData ["A tab"]  = {
     },
     "Other features" : {
         "Secret" : "secret:mySuperSecretPassword123",
+        "Long secret with square replacement" : "secret:https://en.wikisource.org/wiki/The_Meditations_of_the_Emperor_Marcus_Antoninus/Book_[number]",
         "Displaying an array of values" : [
              "http://example.com",
              "NOTE: An array is a good way to add a note or a comment together with a value",

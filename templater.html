@@ -280,14 +280,14 @@ body {
 
 <template id="item-value-template">
     <div class="item-display">
-      <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
+      <div class="item-value-brief {classes}">{briefValue}</div>
     </div>
     <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
 </template>
 
 <template id="item-link-template">
     <div class="link-display">
-      <a class="item-value-brief popit" href="#" onclick="javascript:openLink(event, '{uuid}');">{valueBrief}</a>
+      <a class="item-value-brief {classes}" href="#" onclick="javascript:openLink(event, '{uuid}');">{briefValue}</a>
     </div>
     <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
   </template>
@@ -363,6 +363,7 @@ String.prototype.supplant = function (o = {}) {
 <script>
 
 const SECRET = "secret:";
+const BULLET = '\u2022';
 const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
 
@@ -398,18 +399,24 @@ const displayItem = (key, value, uuid, context = {}) => {
         item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, key });
     }
 
-    if (linkRegExp.test(resolvedValue)) {
-        const content = { uuid, valueBrief: getShortenValue(resolvedValue) }
-        item.itemLinkTemplate = itemLinkTemplate.supplant(content);
-    } else {
-        if (typeof item.value === "string" && item.value.toLowerCase().startsWith(SECRET)) {
-          valueBrief = value.substring(SECRET.length).replace(/./g, '\u2022');
-          const content = { uuid, valueBrief, maskClass : "masked"}
-          item.itemValueTemplate = itemValueTemplate.supplant(content);
-        } else {
-          const content = { uuid, valueBrief: resolvedValue }
-          item.itemValueTemplate = itemValueTemplate.supplant(content);
+    const briefValue = getBriefValue(resolvedValue);
+    const classList = []
+    if (typeof briefValue === "string") {
+      if (briefValue.includes(BULLET)){
+        classList.push("masked");
+      } else {
+        if (resolvedValue !== value) {
+          classList.push("popit");
         }
+      }
+    }
+
+    const classes = classList.join(" ");
+
+    if (linkRegExp.test(resolvedValue)) {
+      item.itemLinkTemplate = itemLinkTemplate.supplant({ uuid, briefValue, classes });
+    } else {
+      item.itemValueTemplate = itemValueTemplate.supplant({ uuid, briefValue, classes });
     }
     return itemTemplate.supplant(item);
 };
@@ -592,12 +599,33 @@ const shareTab = (tabName) => {
   showToast("Tab content copied!", "success");
 };
 
+const getBriefValue = (resolvedValue) => {
+  let briefValue = resolvedValue;
+  if (typeof briefValue === "string" && briefValue.toLowerCase().startsWith(SECRET)) {
+    briefValue = resolvedValue.substring(SECRET.length); // Default brief value for secrets is the masked version
+    briefValue = linkRegExp.test(briefValue) ? getShortenValue(briefValue) : briefValue;
+    briefValue = briefValue.replace(/./g, BULLET);
+  } else {
+    briefValue = linkRegExp.test(resolvedValue) ? getShortenValue(resolvedValue) : resolvedValue;
+  }
+  return briefValue;
+};
+
 const copyText = (event, uuid) => {
   const element = document.querySelector(`[data-uuid="${uuid}"]`);
+  const value = (element.dataset.value ?? "");
   const fnc = event.metaKey ? replaceSquare : promptReplaceSquare; // Override the prompt if Meta key is held
-  const fullLink = fnc(element.dataset.value ?? "");
-  if (!fullLink) return;
-  navigator.clipboard.writeText(fullLink.substring(SECRET.length));
+  const resolvedValue = fnc(value)
+  if (resolvedValue === false) {
+    showToast("Copy cancelled!", "warning");
+    return;
+  }
+
+  const briefElements = element.querySelector('.item-value-brief');
+  const briefValue = getBriefValue(resolvedValue);
+  briefElements.innerHTML = briefValue;
+
+  navigator.clipboard.writeText(resolvedValue);
   showToast("copied!", "success");
 };
 
