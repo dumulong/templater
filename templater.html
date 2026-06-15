@@ -545,7 +545,7 @@ const promptReplaceSquare = (link) => {
 
   for (const variable of matchSet) {
     const defaultVal = globalData.lsData[variable];
-    let replaceBy = prompt(variable, defaultVal === undefined ? "" : defaultVal);
+    let replaceBy = window.prompt(variable, defaultVal === undefined ? "" : defaultVal);
     if (replaceBy === null) {
       return false; // Exit on "cancel"
     }

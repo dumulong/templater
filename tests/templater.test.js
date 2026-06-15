@@ -19,34 +19,22 @@ const loadTemplater = async () => {
     url: 'http://localhost/templater.html',
   });
 
-  const storage = new Map();
   const clipboard = { writeText: jest.fn().mockResolvedValue() };
   const sandbox = {
     window: dom.window,
     document: dom.window.document,
     navigator: dom.window.navigator,
-    localStorage: {
-      getItem(key) {
-        return storage.has(key) ? storage.get(key) : null;
-      },
-      setItem(key, value) {
-        storage.set(key, String(value));
-      },
-      removeItem(key) {
-        storage.delete(key);
-      },
-      clear() {
-        storage.clear();
-      },
-    },
+    localStorage: dom.window.localStorage,
     console,
     setTimeout,
     clearTimeout,
     TextEncoder,
     TextDecoder,
+    prompt: dom.window.prompt,
   };
   sandbox.window.localStorage = sandbox.localStorage;
   sandbox.window.navigator.clipboard = clipboard;
+  sandbox.window.prompt = sandbox.prompt;
   sandbox.window.self = sandbox.window;
   sandbox.window.global = sandbox.window;
   sandbox.self = sandbox.window;
@@ -76,6 +64,7 @@ const loadTemplater = async () => {
     'addToRegistry',
     'clickLabel',
     'toggleFolder',
+    'parseLsData',
     'globalData',
   ];
   const exportScript = exportNames.map((name) => `window.${name} = ${name};`).join('\n');
@@ -150,5 +139,45 @@ describe('templater.html JavaScript', () => {
 
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify({ foo: 'bar' }, null, 2));
     expect(folder.classList.contains('hidden-folder')).toBe(true);
+  });
+
+  it('toggleFolder toggles the folder class without the meta key', () => {
+    const folder = window.document.createElement('div');
+    folder.dataset.uuid = 'folder-1';
+    folder.className = 'item-list hidden-folder';
+    window.document.body.appendChild(folder);
+
+    const clickEvent = new window.MouseEvent('click', { metaKey: false });
+    window.toggleFolder(clickEvent, 'folder-1');
+
+    expect(folder.classList.contains('hidden-folder')).toBe(false);
+  });
+
+  it('promptReplaceSquare prompts for placeholders and stores them in local storage', () => {
+    window.globalData.lsData = {};
+    window.localStorage.clear();
+
+    const originalPrompt = window.prompt;
+    const promptMock = jest.fn().mockReturnValue('Alice');
+    window.prompt = promptMock;
+
+    try {
+      const result = window.promptReplaceSquare('Hello [name]');
+
+      expect(promptMock).toHaveBeenCalledWith('[name]', '');
+      expect(result).toBe('Hello Alice');
+      expect(window.globalData.lsData['[name]']).toBe('Alice');
+      expect(window.localStorage.getItem('templaterLS')).toBe(JSON.stringify({ '[name]': 'Alice' }));
+    } finally {
+      window.prompt = originalPrompt;
+    }
+  });
+
+  it('parseLsData loads persisted values into globalData', () => {
+    window.localStorage.setItem('templaterLS', JSON.stringify({ '[foo]': 'bar', name: 'Alice' }));
+
+    window.parseLsData();
+
+    expect(window.globalData.lsData).toEqual({ '[foo]': 'bar', name: 'Alice' });
   });
 });
