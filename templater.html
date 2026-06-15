@@ -400,6 +400,7 @@ const displayItem = (key, value, uuid, context = {}) => {
     }
 
     const briefValue = getBriefValue(resolvedValue);
+
     const classList = []
     if (typeof briefValue === "string") {
       if (briefValue.includes(BULLET)){
@@ -412,8 +413,8 @@ const displayItem = (key, value, uuid, context = {}) => {
     }
 
     const classes = classList.join(" ");
-
-    if (linkRegExp.test(resolvedValue)) {
+    const islink = (typeof resolvedValue === "string") && linkRegExp.test(resolvedValue.replace(SECRET, ""));
+    if (islink) {
       item.itemLinkTemplate = itemLinkTemplate.supplant({ uuid, briefValue, classes });
     } else {
       item.itemValueTemplate = itemValueTemplate.supplant({ uuid, briefValue, classes });
@@ -621,11 +622,16 @@ const copyText = (event, uuid) => {
     return;
   }
 
+  // Refresh the display with the new possible word replacement(s)
   const briefElements = element.querySelector('.item-value-brief');
   const briefValue = getBriefValue(resolvedValue);
   briefElements.innerHTML = briefValue;
 
-  navigator.clipboard.writeText(resolvedValue);
+  const valueToCopy = resolvedValue.startsWith(SECRET)
+  ? resolvedValue.substring(SECRET.length)
+  : resolvedValue;
+
+  navigator.clipboard.writeText(valueToCopy);
   showToast("copied!", "success");
 };
 
