@@ -275,7 +275,7 @@ body {
 </template>
 
 <template id="item-key-template">
-  <div class="key-display"><span class="popit" onclick="clickLabel(event, '{uuid}')">{key}</span> :</div>
+  <div class="key-display"><span onclick="clickLabel(event, '{uuid}')">{key}</span> :</div>
 </template>
 
 <template id="item-value-template">
@@ -939,25 +939,16 @@ const positionPopoverAbove = (el, popoverDiv) => {
 const addPopoverListeners = () => {
   const myPopover = getPopover();
   const popitElements = document.querySelectorAll(".popit");
-  const squarePattern = /\[.*\]/; // Contain [ and ]
-  const curlyPattern = /\{.*\}/; // Contain { and }
 
   popitElements.forEach((el) => {
     el.addEventListener("mouseenter", function () {
       const itemContainer = el.closest('.item-container');
-      const parentClasses = el.parentElement.classList;
-
-      //const value = itemContainer.dataset.value ?? "";
       const uuid = itemContainer.dataset["uuid"];
-      if (parentClasses.contains("item-display") || parentClasses.contains("link-display")) {
-        const value = Object.values(globalData.registry.get(uuid))[0];
-        if (squarePattern.test(value) || curlyPattern.test(value)) {
-          myPopover.innerHTML = value;
-          myPopover.showPopover();
-          // Wait for layout to update before positioning
-          requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
-        }
-      }
+      const value = Object.values(globalData.registry.get(uuid))[0];
+      myPopover.innerHTML = value;
+      myPopover.showPopover();
+      // Wait for layout to update before positioning
+      requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
     });
 
     el.addEventListener("mouseleave", () => myPopover.hidePopover());
