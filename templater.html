@@ -105,6 +105,9 @@ body {
   font-weight: 600;
   margin-right: 6px;
 }
+.word-replace {
+  color: maroon;
+}
 
 .folder-toggle {
   display: flex;
@@ -275,7 +278,7 @@ body {
 </template>
 
 <template id="item-key-template">
-  <div class="key-display"><span onclick="clickLabel(event, '{uuid}')">{key}</span> :</div>
+  <div class="key-display {classes}"><span onclick="clickLabel(event, '{uuid}')">{key}</span> :</div>
 </template>
 
 <template id="item-value-template">
@@ -366,6 +369,7 @@ const SECRET = "secret:";
 const BULLET = '\u2022';
 const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
+const keyPattern = /^\[.*\]$/; // Keys enclosed in brackets []
 
 const linkRegExp = /^http.*/;
 
@@ -396,7 +400,8 @@ const displayItem = (key, value, uuid, context = {}) => {
     item.itemLinkTemplate = "";
 
     if (key) {
-        item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, key });
+        const classes = keyPattern.test(key) ? "word-replace" : "";
+        item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, key, classes });
     }
 
     const briefValue = getBriefValue(resolvedValue);
@@ -552,8 +557,10 @@ const promptReplaceSquare = (link) => {
     link = link.replaceAll(variable, replaceBy);
     globalData.lsData[variable] = replaceBy;
   }
+
   if (matchSet.size > 0) {
     localStorage.setItem(templaterLSKey, JSON.stringify(globalData.lsData));
+    templaterData[temporaryTabName] = { ...templaterData[temporaryTabName], ...globalData.lsData };
   }
   return link;
 };
@@ -578,14 +585,11 @@ const parseLsData = () => {
   globalData.lsData = {}; 
   templaterData[temporaryTabName] = {};
   const strLs = localStorage.getItem(templaterLSKey) || "{}";
-  const keyPattern = /^\[.*\]$/; // Only keys that are fully enclosed in brackets [] will be added to the temporary tab, as they are meant to be used as variables in the templates
   try {
     const data = JSON.parse(strLs);
     for (const key in data) {
       globalData.lsData[key] = data[key];
-      if (!keyPattern.test(key)) {
-        templaterData[temporaryTabName][key] = data[key];
-      }
+      templaterData[temporaryTabName][key] = data[key];
     }
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
@@ -749,7 +753,6 @@ const displayToc = () => {
   const lsButton = `<button class="ls-button" onclick="showLsSection()">Local Storage</button>`;
   
   tocDiv.innerHTML = Object.keys(templaterData)
-    .filter(tab => Object.keys(templaterData[tab]).length > 0)
     .map((item) => tabTemplate.supplant({ item }))
     .join("") + lsButton;
 };
