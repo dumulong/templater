@@ -447,7 +447,7 @@ const replaceCurly = (value, context = {}) => {
   if (typeof value !== "string") return value;
 
   let result = value;
-  const curlyRegExp = /\{([^{}]+)\}/g;
+  const curlyRegExp = /\{([^{}]+)\}/;
   const maxRetry = 10;
   let retry = 0;
 
@@ -626,10 +626,9 @@ const copyText = (event, uuid) => {
     return;
   }
 
-  // Refresh the display with the new possible word replacement(s)
-  const briefElements = element.querySelector('.item-value-brief');
-  const briefValue = getBriefValue(resolvedValue);
-  briefElements.innerHTML = briefValue;
+  if (!event.metaKey) {
+    updateDisplayAfterReplacement();
+  }
 
   const valueToCopy = resolvedValue.startsWith(SECRET)
   ? resolvedValue.substring(SECRET.length)
@@ -639,15 +638,28 @@ const copyText = (event, uuid) => {
   showToast("copied!", "success");
 };
 
+const updateDisplayAfterReplacement = () => {
+  const allElements = document.querySelectorAll('.item-container');
+  allElements.forEach(element => {
+    const value = element.dataset.value ?? "";
+    const resolvedValue = replaceSquare(value);
+    const briefValue = getBriefValue(resolvedValue);
+    const briefElement = element.querySelector('.item-value-brief');
+    if (briefElement) {
+      briefElement.innerHTML = briefValue;
+    }
+  });
+};
+
 const openLink = (event,uuid) => {
   event.preventDefault();
   const element = document.querySelector(`[data-uuid="${uuid}"]`);
   const fnc = event.metaKey ? replaceSquare : promptReplaceSquare;
   const fullLink = fnc(element.dataset.value ?? "");
   if (!fullLink) return;
-  Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
-      el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
-  });
+  if (!event.metaKey) {
+      updateDisplayAfterReplacement();
+  }
   window.open(fullLink, uuid);
 };
 const clearActiveTab = () => {
@@ -806,7 +818,7 @@ const showData = (data) => {
 const search = (data, searchFor, exactMatch = false) => {
   const result = {};
 
-  for (prop in data) {
+  for (const prop in data) {
     if (typeof data[prop] === "string") {
       if (isMatchingSearch(prop, searchFor, exactMatch) || isMatchingSearch(data[prop], searchFor, exactMatch)) {
         result[prop] = data[prop];
