@@ -61,7 +61,7 @@ body {
   font-size: 20px;
 }
 
-.tab-button{
+.tab-button {
   padding: 3px 10px;
   border: 1px solid black;
   background: #eee;
@@ -72,10 +72,18 @@ body {
   cursor: pointer;
 }
 
-.item-list {
+.folder-indent {
   margin-left: 10px;
   padding-left: 20px;
   border-left: 1px solid #e0e0e0;
+  margin-bottom: 10px;
+}
+
+.list-indent {
+  margin-left: 3px;
+  padding-left: 80px;
+  border-left: 1px solid #e0e0e0;
+  margin-bottom: 10px;
 }
 
 .item-container {
@@ -97,6 +105,9 @@ body {
   font-weight: 600;
   margin-right: 6px;
 }
+.word-replace {
+  color: maroon;
+}
 
 .folder-toggle {
   display: flex;
@@ -106,6 +117,9 @@ body {
 }
 
 .folder-name {
+  display:inline-flex; 
+  align-items:center; 
+  gap:8px; 
   padding: 3px 0;
   font-size: 16px;
   font-weight: 800;
@@ -126,11 +140,6 @@ body {
   color: rgba(0, 0, 238, 0.3);
 }
 
-.folder-name { 
-  display:inline-flex; 
-  align-items:center; 
-  gap:8px; 
-}
 
 .share-button {
   padding: 0;
@@ -176,17 +185,24 @@ body {
   background-color: #eee;
   border: 1px solid black;
 }
+
 .ls-note {
   font-size: small;
   color: dimgray;
   margin-top: 3px;
+  padding-bottom: 3px;
 }
+
 .hidden {
   display: none;
 }
 
 .hidden-folder {
   display: none;
+}
+
+.invisible {
+  visibility : hidden;
 }
 
 .search-section {
@@ -250,24 +266,40 @@ body {
 
 <template id="folder-template">
   <div class="folder-toggle">
-    <div class="folder-name" onclick="toggleFolder('folder_{id}')">
-      <button class="folder-icon">&#128194;</button>{displayKey}
+    <div class="folder-name" onclick="toggleFolder(event, '{uuid}')">
+      <button class="folder-icon">&#128194;</button>{key}
     </div>
-    <button class="share-button" onclick="shareFolder('folder_{id}')">Share Folder</button>
   </div>
-  <div data-value="{displayKey}" class="folder_{id} item-list hidden-folder">{children}</div>
+  <div data-value="{key}" data-uuid="{uuid}" class="folder-indent hidden-folder">{children}</div>
 </template>
 
+<template id="children-list-template">
+  <div class="list-indent">{children}</div>
+</template>
+
+<template id="item-key-template">
+  <div class="key-display {classes}"><span onclick="clickLabel(event, '{uuid}')">{key}</span> :</div>
+</template>
+
+<template id="item-value-template">
+    <div class="item-display">
+      <div class="item-value-brief {classes}">{briefValue}</div>
+    </div>
+    <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
+</template>
+
+<template id="item-link-template">
+    <div class="link-display">
+      <a class="item-value-brief {classes}" href="#" onclick="javascript:openLink(event, '{uuid}');">{briefValue}</a>
+    </div>
+    <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
+  </template>
+
 <template id="item-template">
-  <div class="item-container" id="itemContainer_{id}" data-value="{value}"">
-    <div class="key-display"><span id="displayKey_{id}" class="popit">{displayKey}</span> :</div>
-    <div class="item-display {showItemClass}">
-      <div class="item-value-brief popit {maskClass}">{valueBrief}</div>
-    </div>
-    <div class="link-display {showLinkClass}">
-      <a class="item-value-brief popit {maskClass}" href="javascript:openLink('itemContainer_{id}');">{valueBrief}</a>
-    </div>
-    <button class="copy-button" onclick="copyText('itemContainer_{id}')">copy</button>
+  <div class="item-container" data-uuid="{uuid}" data-value="{value}">
+    {itemKeyTemplate}
+    {itemValueTemplate}
+    {itemLinkTemplate}
   </div>
 </template>
 
@@ -286,7 +318,22 @@ body {
           <div>
             <textarea id="lsData"></textarea>
           </div>
-          <div class="ls-note">Local Storage variable: "{templaterLSKey}"</div>
+          <div style="padding-top: 20px;"><b>NOTE:</b></div>
+          <div class="ls-note">
+            The Local Storage variable "{templaterLSKey}" is used to store temporary templater data.
+          </div>
+          <div class="ls-note">
+            You can enter JSON data directly into the textarea and click on <b>Set</b> or <b>Merge</b> to save it.</br>
+            You can also copy an item or a folder from other tabs by clicking on the item/folder's name while holding the Meta key (Command or Windows).</br>
+            The JSON data will then be displayed on the <b>Temporary</b> tab.
+          </div>
+          <div class="ls-note">
+            There are 2 types of variables: <code>{variable}</code> and <code>[variable]</code>.</br>
+            The <code>{variable}</code> will be automatically replaced by other values from items in the same parent folder.<br>
+            The <code>[variable]</code> will trigger a prompt to ask for replacement values when you click on the copy button or the link (can be bypassed by holding the meta key). 
+            This replacement method will keep the values in the local storage, so the next time you use the same variable it will be pre-filled 
+            with the last value you entered, and you can choose to keep it or change it.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -318,12 +365,11 @@ String.prototype.supplant = function (o = {}) {
 
 <script>
 
-const itemTemplate = document.querySelector("#item-template").innerHTML;
-const folderTemplate = document.querySelector("#folder-template").innerHTML;
-
+const SECRET = "secret:";
+const BULLET = '\u2022';
 const templaterLSKey = "templaterLS";
 const temporaryTabName = "Temporary";
-const hiddenFieldLabel = "hidden";
+const keyPattern = /^\[.*\]$/; // Keys enclosed in brackets []
 
 const linkRegExp = /^http.*/;
 
@@ -337,38 +383,59 @@ const createUID = () => {
   });
 };
 
+const displayItem = (key, value, uuid, context = {}) => {
+    const itemTemplate = document.querySelector("#item-template").innerHTML;
+    const itemKeyTemplate = document.querySelector("#item-key-template").innerHTML;
+    const itemValueTemplate = document.querySelector("#item-value-template").innerHTML;
+    const itemLinkTemplate = document.querySelector("#item-link-template").innerHTML;
 
-const prepItemForDisplay = (key, value) => {
-
-    const SECRET = "secret:";
-    const resolvedValue = resolveLinkVar(value);
+    const curlyFreeValue = typeof value === "string" ? replaceCurly(value, context) : value;
+    const resolvedValue = replaceSquare(curlyFreeValue);
 
     const item = {};
-    item.id = createUID();
-    item.key = key;
-    item.displayKey = key;
-    item.value = value;
+    item.uuid = uuid;
+    item.value = curlyFreeValue;
+    item.itemKeyTemplate = "";
+    item.itemValueTemplate = "";
+    item.itemLinkTemplate = "";
 
-    if (linkRegExp.test(resolvedValue)) {
-        item.valueBrief = getShortenValue(resolvedValue);
-        item.showItemClass = "hidden";
-        item.showLinkClass = "";
-        item.maskClass = "";
-    } else {
-        if (item.value.toLowerCase().startsWith(SECRET)) {
-            item.value = value.substring(SECRET.length);
-            item.valueBrief = item.value.replace(/./g, '\u2022'); // use U+2022
-            item.maskClass = (/^\u2022+$/).test(item.valueBrief) ? "masked" : "";
-        } else {
-            item.valueBrief = resolvedValue;
-            item.maskClass = "";
-        }
-        item.showItemClass = "";
-        item.showLinkClass = "hidden";
+    if (key) {
+        const classes = keyPattern.test(key) ? "word-replace" : "";
+        item.itemKeyTemplate = itemKeyTemplate.supplant({ uuid, key, classes });
     }
 
-    return item;
+    const briefValue = getBriefValue(resolvedValue);
+
+    const classList = []
+    if (typeof briefValue === "string") {
+      if (briefValue.includes(BULLET)){
+        classList.push("masked");
+      } else {
+        if (resolvedValue !== value) {
+          classList.push("popit");
+        }
+      }
+    }
+
+    const classes = classList.join(" ");
+    const islink = (typeof resolvedValue === "string") && linkRegExp.test(resolvedValue.replace(SECRET, ""));
+    if (islink) {
+      item.itemLinkTemplate = itemLinkTemplate.supplant({ uuid, briefValue, classes });
+    } else {
+      item.itemValueTemplate = itemValueTemplate.supplant({ uuid, briefValue, classes });
+    }
+    return itemTemplate.supplant(item);
 };
+
+const displayFolder = (key, children, uuid) => {  
+  const folderTemplate = document.querySelector("#folder-template").innerHTML;
+  return folderTemplate.supplant({key, children, uuid});
+}
+
+const displayList = (childrenList) => {
+    const childrenListTemplate = document.querySelector("#children-list-template").innerHTML;
+    return childrenListTemplate.supplant({ children: childrenList.join("") });
+}
 
 const getShortenValue = (value, maxLength = 60) => {
   return value.length < maxLength ? 
@@ -376,98 +443,130 @@ const getShortenValue = (value, maxLength = 60) => {
     value.substring(0, maxLength / 2) + "[...]" + value.substring(value.length - maxLength / 2);
 };
 
-const parseObj = (item, list) => {
-  const keys = Object.keys(item);
-  keys.forEach((key) => {
-    if (Array.isArray(item[key])) {
-      item[key].forEach((child) => parseObj(child, list));
-    } else if (typeof item[key] === "object") {
-      parseObj(item[key], list);
-    }
-  });
-  list.push(item);
-};
+const replaceCurly = (value, context = {}) => {
+  if (typeof value !== "string") return value;
 
-const processReplace = (item, ndx, list) => {
-  const keys = Object.keys(item);
-  keys.forEach((key) => {
-    if (typeof item[key] !== "object") {
-      item[key] = replace(item[key], ndx, list);
-    }
-  });
-};
-
-// This function will replace the values between curly brackets {} 
-// with the previous values in the list, and it will do it recursively 
-// until there is no more value to replace or it reaches the max retry 
-// limit (to avoid infinite loop)
-const replace = (value, ndx, list) => {
+  let result = value;
+  const curlyRegExp = /\{([^{}]+)\}/;
   const maxRetry = 10;
   let retry = 0;
 
-  while (retry++ < maxRetry && `${value}`.match(/\{([^{}]*)\}/g)) {
-    for (let i = ndx; i >= 0; i--) {
-      value = value.supplant(list[i]);
-    }
+  while (retry++ < maxRetry && curlyRegExp.test(result)) {
+    result = result.replace(curlyRegExp, (match, key) => {
+      const replacement = context && context[key];
+      return replacement !== undefined && typeof replacement !== "object"
+        ? String(replacement)
+        : match;
+    });
   }
 
-  return value;
+  return result;
 };
 
-const displayObj = (obj, list, firstTime = true) => {
+const addToRegistry = (obj) => {
+  const entryUUID = createUID();
+  globalData.registry.set(entryUUID, obj);
+  return entryUUID;
+};
+
+const displayObj = (obj, list, firstTime = false) => {
   let itemList = [];
 
   for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === "object") {
-      if (key !== "hidden") {
-        const children = displayObj(value, list, false);
 
-        const folderObj = {
-          id: createUID(),
-          displayKey: key,
-          children: children.join(""),
-        };
+    if (Array.isArray(value)) {
+      const entryUUID = addToRegistry({[key]: value});
+      itemList.push(displayItem(key, '', entryUUID, obj));
 
-        const folderDisplay = folderTemplate.supplant(folderObj);
-        itemList.push(folderDisplay);
-      }
+      const childrenList = [];
+      value.forEach((elm) => {
+        if (typeof elm === 'object' && elm !== null) {
+          const childItems = displayObj(elm, []);
+          childrenList.push(...childItems);
+          
+        } else {
+          const elmUUID = addToRegistry({ '': elm });
+          childrenList.push(displayItem('', elm, elmUUID, obj));
+        }
+      });
+      itemList.push(displayList(childrenList));
+    } else if (typeof value === "object") {
+        const children = displayObj(value, list);
+        const folderUUID = addToRegistry({[key]: value});
+        itemList.push(displayFolder(key, children.join(""), folderUUID));
     } else {
-      const item = prepItemForDisplay(key, value);
-      const itemDisplay = itemTemplate.supplant(item);
-      itemList.push(itemDisplay);
+      const entryUUID = addToRegistry({[key]: value});
+      itemList.push(displayItem(key, value, entryUUID, obj));
     }
   }
   list = list.concat(itemList);
   return firstTime ? list : itemList;
 };
 
-const toggleFolder = (folderId) => {
-  const folder = document.querySelector(`.${folderId}`);
-  folder.classList.toggle("hidden-folder");
+const toggleFolder = (event, uuid) => {
+  const folder = document.querySelector(`[data-uuid="${uuid}"]`);
+  if (!folder) return;
+
+  if (event.metaKey) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const registeredObj = globalData.registry.get(uuid);
+    if (registeredObj) {
+      const jsonText = JSON.stringify(registeredObj, null, 2);
+      navigator.clipboard.writeText(jsonText);
+      showToast("Folder object copied!", "success");
+    } else {
+      showToast("No registered folder object found.", "failure");
+    }
+  } else {
+    folder.classList.toggle("hidden-folder");
+  }
 };
 
-const promptVarSwitch = (link) => {
+const clickLabel = (event, uuid) => {
+  if (!event.metaKey) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const registeredObj = globalData.registry.get(uuid);
+  if (!registeredObj) {
+    showToast("No registered object found for this label.", "failure");
+    return;
+  }
+
+  const jsonText = JSON.stringify(registeredObj, null, 2);
+  navigator.clipboard.writeText(jsonText);
+  showToast("Object copied!", "success");
+};
+
+const promptReplaceSquare = (link) => {
   const varRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
   const matchArray = Array.from(link.matchAll(varRegExp)).map(x => x[0]); // Only take the "matched" variable name
   const matchSet = new Set(matchArray); // Make the variable name unique
 
   for (const variable of matchSet) {
     const defaultVal = globalData.lsData[variable];
-    let replaceBy = prompt(variable, defaultVal === undefined ? "" : defaultVal);
+    let replaceBy = window.prompt(variable, defaultVal === undefined ? "" : defaultVal);
     if (replaceBy === null) {
       return false; // Exit on "cancel"
     }
     link = link.replaceAll(variable, replaceBy);
     globalData.lsData[variable] = replaceBy;
   }
+
   if (matchSet.size > 0) {
     localStorage.setItem(templaterLSKey, JSON.stringify(globalData.lsData));
+    templaterData[temporaryTabName] = { ...templaterData[temporaryTabName], ...globalData.lsData };
   }
   return link;
 };
 
-const resolveLinkVar = (link) => {
-
+const replaceSquare = (link) => {
+  if (typeof link !== "string") return link;
   const placeholderRegExp = /\[[^\]]*\]/g; // We will replace the words in brackets []
   const matchArray = Array.from(link.matchAll(placeholderRegExp)).map(x => x[0]); // Only take the "matched" variable name
   const matchSet = new Set(matchArray); // Make the variable name unique
@@ -486,14 +585,11 @@ const parseLsData = () => {
   globalData.lsData = {}; 
   templaterData[temporaryTabName] = {};
   const strLs = localStorage.getItem(templaterLSKey) || "{}";
-  const keyPattern = /^\[.*\]$/;
   try {
     const data = JSON.parse(strLs);
     for (const key in data) {
       globalData.lsData[key] = data[key];
-      if (!keyPattern.test(key)) {
-        templaterData[temporaryTabName][key] = data[key];
-      }
+      templaterData[temporaryTabName][key] = data[key];
     }
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
@@ -508,42 +604,72 @@ const shareTab = (tabName) => {
   showToast("Tab content copied!", "success");
 };
 
-const shareFolder = (folderId) => {
-  const folder = document.querySelector(`.${folderId}`);
-  const value = folder.dataset.value ?? "";
-  const result = search (templaterData[globalData.selectedTab], value, true); // TODO: find the actual foldder? not the first one?
-  const resultStr = JSON.stringify(result, null, 2);
-  navigator.clipboard.writeText(resultStr);
-  showToast("Folder content copied!", "success");
+const getBriefValue = (resolvedValue) => {
+  let briefValue = resolvedValue;
+  if (typeof briefValue === "string" && briefValue.toLowerCase().startsWith(SECRET)) {
+    briefValue = resolvedValue.substring(SECRET.length); // Default brief value for secrets is the masked version
+    briefValue = linkRegExp.test(briefValue) ? getShortenValue(briefValue) : briefValue;
+    briefValue = briefValue.replace(/./g, BULLET);
+  } else {
+    briefValue = linkRegExp.test(resolvedValue) ? getShortenValue(resolvedValue) : resolvedValue;
+  }
+  return briefValue;
 };
 
-const copyText = (elementId) => {
-    const element = document.querySelector(`#${elementId}`);
-    const fullLink = promptVarSwitch(element.dataset.value ?? "");
-    if (!fullLink) return;
-    const bullet = '\u2022';
-    Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
-        if (el.classList.contains('masked')) {
-            el.innerHTML = bullet.repeat(fullLink.length);
-        } else {
-            el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
-        }
-    });
-    navigator.clipboard.writeText(fullLink);
-    showToast("copied!", "success");
+const copyText = (event, uuid) => {
+  const element = document.querySelector(`[data-uuid="${uuid}"]`);
+  const value = (element.dataset.value ?? "");
+  const fnc = event.metaKey ? replaceSquare : promptReplaceSquare; // Override the prompt if Meta key is held
+  const resolvedValue = fnc(value)
+  if (resolvedValue === false) {
+    showToast("Copy cancelled!", "warning");
+    return;
+  }
+
+  if (!event.metaKey) {
+    updateDisplayAfterReplacement();
+  }
+
+  const valueToCopy = resolvedValue.startsWith(SECRET)
+  ? resolvedValue.substring(SECRET.length)
+  : resolvedValue;
+
+  navigator.clipboard.writeText(valueToCopy);
+  showToast("copied!", "success");
 };
 
-const openLink = (elementId) => {
-    const element = document.querySelector(`#${elementId}`);
-    const fullLink = promptVarSwitch(element.dataset.value ?? "");
-    if (!fullLink) return;
-    Array.from(element.querySelectorAll('.item-value-brief')).forEach(el => {
-        el.innerHTML = (linkRegExp.test(fullLink)? getShortenValue(fullLink) : fullLink);
-    });
-    window.open(fullLink, elementId);
+const updateDisplayAfterReplacement = () => {
+  const allElements = document.querySelectorAll('.item-container');
+  allElements.forEach(element => {
+    const value = element.dataset.value ?? "";
+    const resolvedValue = replaceSquare(value);
+    const briefValue = getBriefValue(resolvedValue);
+    const briefElement = element.querySelector('.item-value-brief');
+    if (briefElement) {
+      briefElement.innerHTML = briefValue;
+    }
+  });
 };
+
+const openLink = (event,uuid) => {
+  event.preventDefault();
+  const element = document.querySelector(`[data-uuid="${uuid}"]`);
+  const fnc = event.metaKey ? replaceSquare : promptReplaceSquare;
+  const fullLink = fnc(element.dataset.value ?? "");
+  if (!fullLink) return;
+  if (!event.metaKey) {
+      updateDisplayAfterReplacement();
+  }
+  window.open(fullLink, uuid);
+};
+const clearActiveTab = () => {
+  Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
+    button.classList.remove("active-tab");
+  });
+};  
 
 const showLsSection = () => {
+  clearActiveTab();
   const searchSection = document.querySelector(".search-section");
   searchSection.classList.add("hidden");
   const contentDiv = document.querySelector(".content");
@@ -639,7 +765,6 @@ const displayToc = () => {
   const lsButton = `<button class="ls-button" onclick="showLsSection()">Local Storage</button>`;
   
   tocDiv.innerHTML = Object.keys(templaterData)
-    .filter(tab => Object.keys(templaterData[tab]).length > 0)
     .map((item) => tabTemplate.supplant({ item }))
     .join("") + lsButton;
 };
@@ -655,9 +780,9 @@ const selectTab = (tab) => {
     globalData.selectedTab = Object.keys(templaterData)[0];
   } else {
     showToast(`No data available for the selected tab!`, "error");
-    return
+    return;
   }
-
+  
   Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
     if (button.textContent === globalData.selectedTab) {
       button.classList.add("active-tab");
@@ -678,38 +803,41 @@ const showData = (data) => {
   const searchSection = document.querySelector(".search-section");
   searchSection.classList.remove("hidden");
 
-  const list = [];
-  parseObj(data, list);
+  globalData.registry.clear();
 
-  list.forEach((item, ndx) => {
-    processReplace(item, ndx, list);
-  });
-  const displayList = displayObj(data, []);
+  const display = displayObj(data, [], true);
   if (globalData.filteredList && Object.keys(globalData.filteredList).length > 0) {
-    displayList.push(`<button class="share-button share-tab" onclick="shareTab('')">Share Search Results</button>`);
+    display.push(`<button class="share-button share-tab" onclick="shareTab('')">Share Search Results</button>`);
   } else {
-    displayList.push(`<button class="share-button share-tab" onclick="shareTab('${globalData.selectedTab}')">Share Tab</button>`);
+    display.push(`<button class="share-button share-tab" onclick="shareTab('${globalData.selectedTab}')">Share Tab</button>`);
   }
   const contentDiv = document.querySelector(".content");
-  contentDiv.innerHTML = displayList.join("");
+  contentDiv.innerHTML = display.join("");
 };
 
 const search = (data, searchFor, exactMatch = false) => {
   const result = {};
 
-  for (prop in data) {
+  for (const prop in data) {
     if (typeof data[prop] === "string") {
       if (isMatchingSearch(prop, searchFor, exactMatch) || isMatchingSearch(data[prop], searchFor, exactMatch)) {
         result[prop] = data[prop];
       }
     } else {
-      if (isMatchingSearch(prop, searchFor, exactMatch)) {
-        result[prop] = data[prop];
+      if (Array.isArray(data[prop])) {
+        const matchingElements = data[prop].filter(el => isMatchingSearch(el, searchFor, exactMatch));
+        if (matchingElements.length > 0 || isMatchingSearch(prop, searchFor, exactMatch)) {
+          result[prop] = matchingElements;
+        }
       } else {
-        const currProp = prop;
-        const local = search(data[prop], searchFor, exactMatch);
-        if (Object.keys(local).length > 0) {
-          result[currProp] = local;
+        if (isMatchingSearch(prop, searchFor, exactMatch)) {
+          result[prop] = data[prop];
+        } else {
+          const currProp = prop;
+          const local = search(data[prop], searchFor, exactMatch);
+          if (Object.keys(local).length > 0) {
+            result[currProp] = local;
+          }
         }
       }
     }
@@ -740,6 +868,7 @@ const doDelayedSearch = (searchFor) => {
   }
 
   timeout = setTimeout(() => {
+    clearActiveTab();
     //globalData.filteredList = search(templaterData[globalData.selectedTab], searchFor); //Search for selected tab only
     globalData.filteredList = search(templaterData, searchFor); //General search
     showData(globalData.filteredList);
@@ -825,22 +954,16 @@ const positionPopoverAbove = (el, popoverDiv) => {
 const addPopoverListeners = () => {
   const myPopover = getPopover();
   const popitElements = document.querySelectorAll(".popit");
-  const valuePattern = /\[.*\]/; // Contain [ and ]
 
   popitElements.forEach((el) => {
     el.addEventListener("mouseenter", function () {
       const itemContainer = el.closest('.item-container');
-      const parentClasses = el.parentElement.classList;
-
-      const value = itemContainer.dataset.value ?? "";
-      if (parentClasses.contains("item-display") || parentClasses.contains("link-display")) {
-        if (valuePattern.test(value)) {
-          myPopover.innerHTML = value;
-          myPopover.showPopover();
-          // Wait for layout to update before positioning
-          requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
-        }
-      }
+      const uuid = itemContainer.dataset["uuid"];
+      const value = Object.values(globalData.registry.get(uuid))[0];
+      myPopover.innerHTML = value;
+      myPopover.showPopover();
+      // Wait for layout to update before positioning
+      requestAnimationFrame(() => positionPopoverAbove(el, myPopover));
     });
 
     el.addEventListener("mouseleave", () => myPopover.hidePopover());
@@ -857,6 +980,7 @@ const globalData = {
   selectedTab: null,
   lsData: {},
   filteredList: {},
+  registry: new Map(),
 }
 
 resetView();
