@@ -65,6 +65,7 @@ const loadTemplater = async () => {
     'clickLabel',
     'toggleFolder',
     'parseLsData',
+    'updateDisplayAfterReplacement',
     'globalData',
   ];
   const exportScript = exportNames.map((name) => `window.${name} = ${name};`).join('\n');
@@ -179,5 +180,23 @@ describe('templater.html JavaScript', () => {
     window.parseLsData();
 
     expect(window.globalData.lsData).toEqual({ '[foo]': 'bar', name: 'Alice' });
+  });
+
+  it('updates every displayed item when a shared square-bracket value changes', () => {
+    window.globalData.lsData = { '[name]': 'Alice' };
+    window.document.body.innerHTML = `
+      <div class="item-container" data-uuid="1" data-value="Hello [name]"><div class="item-value-brief"></div></div>
+      <div class="item-container" data-uuid="2" data-value="Hi [name]"><div class="item-value-brief"></div></div>
+    `;
+
+    window.updateDisplayAfterReplacement();
+
+    const briefs = Array.from(window.document.querySelectorAll('.item-value-brief'));
+    expect(briefs.map((el) => el.textContent)).toEqual(['Hello Alice', 'Hi Alice']);
+
+    window.globalData.lsData['[name]'] = 'Bob';
+    window.updateDisplayAfterReplacement();
+
+    expect(briefs.map((el) => el.textContent)).toEqual(['Hello Bob', 'Hi Bob']);
   });
 });
