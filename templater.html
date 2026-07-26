@@ -469,47 +469,74 @@ const addToRegistry = (obj) => {
   return entryUUID;
 };
 
+const displayArrayValue = (key, value, currentContext) => {
+  const itemList = [];
+  
+  // Register the array itself and display it as an item header
+  const entryUUID = addToRegistry({[key]: value});
+  itemList.push(displayItem(key, '', entryUUID, currentContext));
+
+  // Build a context that merges all object properties from array elements
+  // This allows sibling elements to reference each other's properties
+  const siblingContext = { ...currentContext };
+  value.forEach((elm) => {
+    if (typeof elm === 'object' && elm !== null) {
+      Object.assign(siblingContext, elm);
+    }
+  });
+
+  // Display each array element (recursively if it's an object)
+  const childrenList = [];
+  value.forEach((elm) => {
+    if (typeof elm === 'object' && elm !== null) {
+      const childItems = displayObj(elm, [], false, siblingContext);
+      childrenList.push(...childItems);
+    } else {
+      const elmUUID = addToRegistry({ '': elm });
+      childrenList.push(displayItem('', elm, elmUUID, siblingContext));
+    }
+  });
+  
+  itemList.push(displayList(childrenList));
+  return itemList;
+};
+
+const displayObjectValue = (key, value, currentContext) => {
+  // Recursively display the nested object
+  const children = displayObj(value, [], false, currentContext);
+  
+  // Register the object and wrap it in a folder
+  const folderUUID = addToRegistry({[key]: value});
+  return displayFolder(key, children.join(""), folderUUID);
+};
+
+const displayPrimitiveValue = (key, value, currentContext) => {
+  const entryUUID = addToRegistry({[key]: value});
+  return displayItem(key, value, entryUUID, currentContext);
+};
+
 const displayObj = (obj, list, firstTime = false, parentContext = {}) => {
   let itemList = [];
+  
+  // Merge parent context with current object for variable substitution
   const currentContext = { ...parentContext, ...obj };
 
   for (const [key, value] of Object.entries(obj)) {
-
     if (Array.isArray(value)) {
-      const entryUUID = addToRegistry({[key]: value});
-      itemList.push(displayItem(key, '', entryUUID, currentContext));
-
-      const childrenList = [];
-      
-      // Build a context that includes all sibling object properties from the array
-      const siblingContext = { ...currentContext };
-      value.forEach((elm) => {
-        if (typeof elm === 'object' && elm !== null) {
-          Object.assign(siblingContext, elm);
-        }
-      });
-
-      value.forEach((elm) => {
-        if (typeof elm === 'object' && elm !== null) {
-          const childItems = displayObj(elm, [], false, siblingContext);
-          childrenList.push(...childItems);
-          
-        } else {
-          const elmUUID = addToRegistry({ '': elm });
-          childrenList.push(displayItem('', elm, elmUUID, siblingContext));
-        }
-      });
-      itemList.push(displayList(childrenList));
+      // Arrays display as a header item followed by a list of children
+      itemList.push(...displayArrayValue(key, value, currentContext));
     } else if (typeof value === "object") {
-        const children = displayObj(value, list, false, currentContext);
-        const folderUUID = addToRegistry({[key]: value});
-        itemList.push(displayFolder(key, children.join(""), folderUUID));
+      // Objects display as collapsible folders
+      itemList.push(displayObjectValue(key, value, currentContext));
     } else {
-      const entryUUID = addToRegistry({[key]: value});
-      itemList.push(displayItem(key, value, entryUUID, currentContext));
+      // Primitives display as simple key-value items
+      itemList.push(displayPrimitiveValue(key, value, currentContext));
     }
   }
+  
   list = list.concat(itemList);
+  
+  // Return full list on first call, just items for recursive calls
   return firstTime ? list : itemList;
 };
 
