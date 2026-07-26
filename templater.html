@@ -469,34 +469,44 @@ const addToRegistry = (obj) => {
   return entryUUID;
 };
 
-const displayObj = (obj, list, firstTime = false) => {
+const displayObj = (obj, list, firstTime = false, parentContext = {}) => {
   let itemList = [];
+  const currentContext = { ...parentContext, ...obj };
 
   for (const [key, value] of Object.entries(obj)) {
 
     if (Array.isArray(value)) {
       const entryUUID = addToRegistry({[key]: value});
-      itemList.push(displayItem(key, '', entryUUID, obj));
+      itemList.push(displayItem(key, '', entryUUID, currentContext));
 
       const childrenList = [];
+      
+      // Build a context that includes all sibling object properties from the array
+      const siblingContext = { ...currentContext };
       value.forEach((elm) => {
         if (typeof elm === 'object' && elm !== null) {
-          const childItems = displayObj(elm, []);
+          Object.assign(siblingContext, elm);
+        }
+      });
+
+      value.forEach((elm) => {
+        if (typeof elm === 'object' && elm !== null) {
+          const childItems = displayObj(elm, [], false, siblingContext);
           childrenList.push(...childItems);
           
         } else {
           const elmUUID = addToRegistry({ '': elm });
-          childrenList.push(displayItem('', elm, elmUUID, obj));
+          childrenList.push(displayItem('', elm, elmUUID, siblingContext));
         }
       });
       itemList.push(displayList(childrenList));
     } else if (typeof value === "object") {
-        const children = displayObj(value, list);
+        const children = displayObj(value, list, false, currentContext);
         const folderUUID = addToRegistry({[key]: value});
         itemList.push(displayFolder(key, children.join(""), folderUUID));
     } else {
       const entryUUID = addToRegistry({[key]: value});
-      itemList.push(displayItem(key, value, entryUUID, obj));
+      itemList.push(displayItem(key, value, entryUUID, currentContext));
     }
   }
   list = list.concat(itemList);

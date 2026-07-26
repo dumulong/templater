@@ -58,6 +58,7 @@ const loadTemplater = async () => {
 
   const exportNames = [
     'displayItem',
+    'displayObj',
     'replaceCurly',
     'replaceSquare',
     'promptReplaceSquare',
@@ -108,6 +109,13 @@ describe('templater.html JavaScript', () => {
     const renderedItem = container.querySelector('.item-container');
     expect(renderedItem.getAttribute('data-value')).toBe('Hello Bob');
     expect(renderedItem.textContent).toContain('Hello Bob');
+  });
+
+  it('displayObj resolves curly placeholders from parent folder context in nested objects', () => {
+    const result = window.displayObj({ city: 'Paris', person: { greeting: 'Hello {city}' } }, [], true);
+    const html = result.join('');
+
+    expect(html).toContain('Hello Paris');
   });
 
   it('replaceSquare substitutes bracket values from globalData.lsData', () => {
