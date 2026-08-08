@@ -285,14 +285,14 @@ body {
     <div class="item-display">
       <div class="item-value-brief {classes}">{briefValue}</div>
     </div>
-    <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
+    {copyButton}
 </template>
 
 <template id="item-link-template">
     <div class="link-display">
       <a class="item-value-brief {classes}" href="#" onclick="javascript:openLink(event, '{uuid}');">{briefValue}</a>
     </div>
-    <button class="copy-button" onclick="copyText(event, '{uuid}')">copy</button>
+    {copyButton}
   </template>
 
 <template id="item-template">
@@ -383,7 +383,7 @@ const createUID = () => {
   });
 };
 
-const displayItem = (key, value, uuid, context = {}) => {
+const displayItem = (key, value, uuid, context = {}, options = {}) => {
     const itemTemplate = document.querySelector("#item-template").innerHTML;
     const itemKeyTemplate = document.querySelector("#item-key-template").innerHTML;
     const itemValueTemplate = document.querySelector("#item-value-template").innerHTML;
@@ -398,6 +398,9 @@ const displayItem = (key, value, uuid, context = {}) => {
     item.itemKeyTemplate = "";
     item.itemValueTemplate = "";
     item.itemLinkTemplate = "";
+    item.copyButton = options.hideCopyButton
+      ? ""
+      : `<button class="copy-button" onclick="copyText(event, '${uuid}')">copy</button>`;
 
     if (key) {
         const classes = keyPattern.test(key) ? "word-replace" : "";
@@ -420,9 +423,9 @@ const displayItem = (key, value, uuid, context = {}) => {
     const classes = classList.join(" ");
     const islink = (typeof resolvedValue === "string") && linkRegExp.test(resolvedValue.replace(SECRET, ""));
     if (islink) {
-      item.itemLinkTemplate = itemLinkTemplate.supplant({ uuid, briefValue, classes });
+      item.itemLinkTemplate = itemLinkTemplate.supplant({ uuid, briefValue, classes, copyButton: item.copyButton });
     } else {
-      item.itemValueTemplate = itemValueTemplate.supplant({ uuid, briefValue, classes });
+      item.itemValueTemplate = itemValueTemplate.supplant({ uuid, briefValue, classes, copyButton: item.copyButton });
     }
     return itemTemplate.supplant(item);
 };
@@ -474,7 +477,7 @@ const displayArrayValue = (key, value, currentContext) => {
   
   // Register the array itself and display it as an item header
   const entryUUID = addToRegistry({[key]: value});
-  itemList.push(displayItem(key, '', entryUUID, currentContext));
+  itemList.push(displayItem(key, '', entryUUID, currentContext, { hideCopyButton: true }));
 
   // Build a context that merges all object properties from array elements
   // This allows sibling elements to reference each other's properties

@@ -111,6 +111,14 @@ describe('templater.html JavaScript', () => {
     expect(renderedItem.textContent).toContain('Hello Bob');
   });
 
+  it('displayItem can hide the copy button for array headers', () => {
+    const item = window.displayItem('items', '', 'array-uuid', {}, { hideCopyButton: true });
+    const container = window.document.createElement('div');
+    container.innerHTML = item;
+
+    expect(container.querySelector('.copy-button')).toBeNull();
+  });
+
   it('displayObj resolves curly placeholders from parent folder context in nested objects', () => {
     const result = window.displayObj({ city: 'Paris', person: { greeting: 'Hello {city}' } }, [], true);
     const html = result.join('');
