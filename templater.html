@@ -583,9 +583,9 @@ const parseLsData = () => {
     const data = JSON.parse(strLs);
     for (const key in data) {
       globalData.lsData[key] = data[key];
-      if (!keyPattern.test(key)) {
+      //if (!keyPattern.test(key)) {
         templaterData[temporaryTabName][key] = data[key];
-      }
+      //}
     }
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
