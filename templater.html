@@ -320,19 +320,27 @@ body {
           </div>
           <div style="padding-top: 20px;"><b>NOTE:</b></div>
           <div class="ls-note">
-            The Local Storage variable "{templaterLSKey}" is used to store temporary templater data.
-          </div>
-          <div class="ls-note">
-            You can enter JSON data directly into the textarea and click on <b>Set</b> or <b>Merge</b> to save it.</br>
-            You can also copy an item or a folder from other tabs by clicking on the item/folder's name while holding the Meta key (Command or Windows).</br>
-            The JSON data will then be displayed on the <b>Temporary</b> tab.
-          </div>
-          <div class="ls-note">
-            There are 2 types of variables: <code>{variable}</code> and <code>[variable]</code>.</br>
-            The <code>{variable}</code> will be automatically replaced by other values from items in the same parent folder.<br>
-            The <code>[variable]</code> will trigger a prompt to ask for replacement values when you click on the copy button or the link (can be bypassed by holding the meta key). 
-            This replacement method will keep the values in the local storage, so the next time you use the same variable it will be pre-filled 
-            with the last value you entered, and you can choose to keep it or change it.</div>
+            <p>There are 2 types of replacements: square brackets "[]" and curly brackets "{}".</p>
+
+            <h3>Square brackets "[]" replacement</h3>
+            <ul>
+              <li>This type of variable gets its value from the browser <code>Local Storage</code> (LS).</li>
+              <li>Local Storage is temporary: it is cleared when the browser is closed.</li>
+              <li>When you click a link or the copy button for a value that contains square brackets, the app prompts you for the value.</li>
+              <li>If a value already exists in LS, it is used as the default value.</li>
+              <li>If you change it, the new value replaces the stored value and becomes the default for future use.</li>
+              <li>This is best for temporary, ad hoc values that you do not want to keep in the data file.</li>
+              <li>It is handy for sharing values with coworkers or reusing a value across a few quick tasks.</li>
+            </ul>
+
+            <h3>Curly brackets "{}" replacement</h3>
+            <ul>
+              <li>This type of variable gets its value from the <code>templater_data.js</code> file.</li>
+              <li>Because the value lives in the source data, it is not lost when the browser is closed.</li>
+              <li>The replacement looks for a matching property in the same object, a sibling property, or the closest parent object.</li>
+              <li>This is best for values that are part of the dataset itself and should stay consistent across uses.</li>
+              <li>It is the more permanent, structured form of replacement.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -714,6 +722,7 @@ const showLsSection = () => {
   searchSection.classList.add("hidden");
   const contentDiv = document.querySelector(".content");
   contentDiv.innerHTML = document.querySelector("#localstorage-template").innerHTML.supplant({ templaterLSKey });
+  getLs();
 };
 
 const validateJson = (jsonString) => {
@@ -799,14 +808,28 @@ const deepMerge = (target, source) => {
   return target;
 }
 
+const copyLsDirectly = () => {
+  const compactJsonString = localStorage.getItem(templaterLSKey) || "{}";
+  try {
+    const jsObject = JSON.parse(compactJsonString);
+    const formattedJsonString = JSON.stringify(jsObject, null, 2);
+    navigator.clipboard.writeText(formattedJsonString);
+    showToast("copied!", "success");
+  } catch (e) {
+    showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
+    return;
+  } 
+};
+
 const displayToc = () => {
   const tocDiv = document.querySelector(".toc");
   const tabTemplate = `<button class="tab-button" onclick="selectTab('{item}')">{item}</button>`;
-  const lsButton = `<button class="ls-button" onclick="showLsSection()">Local Storage</button>`;
+  const lsButton = `<button class="ls-button" onclick="showLsSection()">Manage Local Storage</button>`;
+  const copyLsButton = `<button class="ls-button" onclick="copyLsDirectly()">Copy Local Storage</button>`;
   
   tocDiv.innerHTML = Object.keys(templaterData)
     .map((item) => tabTemplate.supplant({ item }))
-    .join("") + lsButton;
+    .join("") + lsButton + copyLsButton;
 };
 
 const selectTab = (tab) => {
