@@ -39,3 +39,17 @@ templaterData ["Another tab"]  = {
 templaterData ["One more tab"]  = {
     "Wait, wait, there's more" : "https://en.wikipedia.org/wiki/Epictetus",
 }
+
+templaterData ["Dev only tab"]  = {
+    "Square replacement" : "https://en.wikisource.org/wiki/The_Meditations_of_the_Emperor_Marcus_Antoninus/Book_[number_test]",
+    "[number_test]" : "{number_test}", //This form!!!
+    "number_test" : "2",
+    "test" : {
+        "number_test" : "3",
+        "number_test display" : "{number_test}",
+        other_test : {
+            "number_test display" : "{number_test}",
+        }
+    },
+    "number_test display" : "{number_test}",
+}

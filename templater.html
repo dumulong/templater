@@ -799,14 +799,28 @@ const deepMerge = (target, source) => {
   return target;
 }
 
+const copyLsDirectly = () => {
+  const compactJsonString = localStorage.getItem(templaterLSKey) || "{}";
+  try {
+    const jsObject = JSON.parse(compactJsonString);
+    const formattedJsonString = JSON.stringify(jsObject, null, 2);
+    navigator.clipboard.writeText(formattedJsonString);
+    showToast("copied!", "success");
+  } catch (e) {
+    showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
+    return;
+  } 
+};
+
 const displayToc = () => {
   const tocDiv = document.querySelector(".toc");
   const tabTemplate = `<button class="tab-button" onclick="selectTab('{item}')">{item}</button>`;
-  const lsButton = `<button class="ls-button" onclick="showLsSection()">Local Storage</button>`;
+  const lsButton = `<button class="ls-button" onclick="showLsSection()">Manage Local Storage</button>`;
+  const copyLsButton = `<button class="ls-button" onclick="copyLsDirectly()">Copy Local Storage</button>`;
   
   tocDiv.innerHTML = Object.keys(templaterData)
     .map((item) => tabTemplate.supplant({ item }))
-    .join("") + lsButton;
+    .join("") + lsButton + copyLsButton;
 };
 
 const selectTab = (tab) => {
