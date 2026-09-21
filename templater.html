@@ -714,6 +714,7 @@ const showLsSection = () => {
   searchSection.classList.add("hidden");
   const contentDiv = document.querySelector(".content");
   contentDiv.innerHTML = document.querySelector("#localstorage-template").innerHTML.supplant({ templaterLSKey });
+  getLs();
 };
 
 const validateJson = (jsonString) => {
