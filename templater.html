@@ -1054,6 +1054,8 @@ resetView();
 addSearchListener();
 addPopoverListeners();
 
+Object.keys(defaultLsValues).forEach(key => delete defaultLsValues[key]);
+
 </script>
 </body>
 
