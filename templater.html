@@ -258,6 +258,7 @@ body {
 </style>
 
 <script src="templater_data.js"></script>
+<script src="templater_default_ls.js"></script>
 
 </head>
 
@@ -635,9 +636,11 @@ const parseLsData = () => {
   const strLs = localStorage.getItem(templaterLSKey) || "{}";
   try {
     const data = JSON.parse(strLs);
-    for (const key in data) {
-      globalData.lsData[key] = data[key];
-      templaterData[temporaryTabName][key] = data[key];
+    const merged = { ...defaultLsValues, ...data };
+    localStorage.setItem(templaterLSKey, JSON.stringify(merged));
+    for (const key in merged) {
+      globalData.lsData[key] = merged[key];
+      templaterData[temporaryTabName][key] = merged[key];
     }
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
@@ -710,6 +713,7 @@ const openLink = (event,uuid) => {
   }
   window.open(fullLink, uuid);
 };
+
 const clearActiveTab = () => {
   Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
     button.classList.remove("active-tab");
