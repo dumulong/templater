@@ -168,7 +168,7 @@ body {
 .ls-button {
   display: inline;
   padding: 0;
-  margin-top: 12px;
+  margin-top: 24px;
   border: 0;
   cursor: pointer;
   background: transparent;
@@ -258,7 +258,6 @@ body {
 </style>
 
 <script src="templater_data.js"></script>
-<script src="templater_default_ls.js"></script>
 
 </head>
 
@@ -630,23 +629,15 @@ const replaceSquare = (link) => {
   return link;
 };
 
-const parseLsData = (loadDefaultLs = false) => {
+const parseLsData = () => {
   globalData.lsData = {}; 
   templaterData[temporaryTabName] = {};
   const strLs = localStorage.getItem(templaterLSKey) || "{}";
   try {
-    const lsData = JSON.parse(strLs);
-    let merged = {};
-    if (loadDefaultLs) {
-      merged = { ...lsData, ...defaultLsValues }
-      showToast("Default Local Storage loaded!", "success");
-    } else {
-      merged = lsData;
-    }
-    localStorage.setItem(templaterLSKey, JSON.stringify(merged));
-    for (const key in merged) {
-      globalData.lsData[key] = merged[key];
-      templaterData[temporaryTabName][key] = merged[key];
+    const data = JSON.parse(strLs);
+    for (const key in data) {
+      globalData.lsData[key] = data[key];
+      templaterData[temporaryTabName][key] = data[key];
     }
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
@@ -719,7 +710,6 @@ const openLink = (event,uuid) => {
   }
   window.open(fullLink, uuid);
 };
-
 const clearActiveTab = () => {
   Array.from(document.querySelectorAll(".tab-button")).forEach(button => {
     button.classList.remove("active-tab");
@@ -750,7 +740,6 @@ const getLs = () => {
     const jsObject = JSON.parse(compactJsonString);
     const formattedJsonString = JSON.stringify(jsObject, null, 2);
     document.querySelector("#lsData").value = formattedJsonString;
-    showToast("Local Storage retrieved!", "success");
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
     return;
@@ -837,11 +826,10 @@ const displayToc = () => {
   const tabTemplate = `<button class="tab-button" onclick="selectTab('{item}')">{item}</button>`;
   const lsButton = `<button class="ls-button" onclick="showLsSection()">Manage Local Storage</button>`;
   const copyLsButton = `<button class="ls-button" onclick="copyLsDirectly()">Copy Local Storage</button>`;
-  const loadDefaultLsButton = `<button class="ls-button" onclick="resetView(true)">Load Default Local Storage</button>`;
   
   tocDiv.innerHTML = Object.keys(templaterData)
     .map((item) => tabTemplate.supplant({ item }))
-    .join("") + lsButton + loadDefaultLsButton + copyLsButton;
+    .join("") + lsButton + copyLsButton;
 };
 
 const selectTab = (tab) => {
@@ -1045,8 +1033,8 @@ const addPopoverListeners = () => {
   });
 };
 
-const resetView = (loadDefaultLs = false) => {
-  parseLsData(loadDefaultLs);
+const resetView = () => {
+  parseLsData();
   displayToc();
   selectTab();
 };
