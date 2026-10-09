@@ -168,7 +168,7 @@ body {
 .ls-button {
   display: inline;
   padding: 0;
-  margin-top: 24px;
+  margin-top: 12px;
   border: 0;
   cursor: pointer;
   background: transparent;
@@ -630,13 +630,19 @@ const replaceSquare = (link) => {
   return link;
 };
 
-const parseLsData = () => {
+const parseLsData = (loadDefaultLs = false) => {
   globalData.lsData = {}; 
   templaterData[temporaryTabName] = {};
   const strLs = localStorage.getItem(templaterLSKey) || "{}";
   try {
-    const data = JSON.parse(strLs);
-    const merged = { ...defaultLsValues, ...data };
+    const lsData = JSON.parse(strLs);
+    let merged = {};
+    if (loadDefaultLs) {
+      merged = { ...lsData, ...defaultLsValues }
+      showToast("Default Local Storage loaded!", "success");
+    } else {
+      merged = lsData;
+    }
     localStorage.setItem(templaterLSKey, JSON.stringify(merged));
     for (const key in merged) {
       globalData.lsData[key] = merged[key];
@@ -744,6 +750,7 @@ const getLs = () => {
     const jsObject = JSON.parse(compactJsonString);
     const formattedJsonString = JSON.stringify(jsObject, null, 2);
     document.querySelector("#lsData").value = formattedJsonString;
+    showToast("Local Storage retrieved!", "success");
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
     return;
@@ -830,10 +837,11 @@ const displayToc = () => {
   const tabTemplate = `<button class="tab-button" onclick="selectTab('{item}')">{item}</button>`;
   const lsButton = `<button class="ls-button" onclick="showLsSection()">Manage Local Storage</button>`;
   const copyLsButton = `<button class="ls-button" onclick="copyLsDirectly()">Copy Local Storage</button>`;
+  const loadDefaultLsButton = `<button class="ls-button" onclick="resetView(true)">Load Default Local Storage</button>`;
   
   tocDiv.innerHTML = Object.keys(templaterData)
     .map((item) => tabTemplate.supplant({ item }))
-    .join("") + lsButton + copyLsButton;
+    .join("") + lsButton + loadDefaultLsButton + copyLsButton;
 };
 
 const selectTab = (tab) => {
@@ -1037,8 +1045,8 @@ const addPopoverListeners = () => {
   });
 };
 
-const resetView = () => {
-  parseLsData();
+const resetView = (loadDefaultLs = false) => {
+  parseLsData(loadDefaultLs);
   displayToc();
   selectTab();
 };
@@ -1053,8 +1061,6 @@ const globalData = {
 resetView();
 addSearchListener();
 addPopoverListeners();
-
-Object.keys(defaultLsValues).forEach(key => delete defaultLsValues[key]);
 
 </script>
 </body>
