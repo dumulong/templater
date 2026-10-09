@@ -635,18 +635,15 @@ const parseLsData = (loadDefaultLs = false) => {
   templaterData[temporaryTabName] = {};
   const strLs = localStorage.getItem(templaterLSKey) || "{}";
   try {
-    const lsData = JSON.parse(strLs);
-    let merged = {};
+    let lsData = JSON.parse(strLs);
     if (loadDefaultLs) {
-      merged = { ...lsData, ...defaultLsValues }
+      lsData = { ...lsData, ...defaultLsValues }
+      localStorage.setItem(templaterLSKey, JSON.stringify(lsData));
       showToast("Default Local Storage loaded!", "success");
-    } else {
-      merged = lsData;
     }
-    localStorage.setItem(templaterLSKey, JSON.stringify(merged));
-    for (const key in merged) {
-      globalData.lsData[key] = merged[key];
-      templaterData[temporaryTabName][key] = merged[key];
+    for (const key in lsData) {
+      globalData.lsData[key] = lsData[key];
+      templaterData[temporaryTabName][key] = lsData[key];
     }
   } catch (e) {
     showToast("Error parsing Local Storage data. It might be corrupted.", "failure");
