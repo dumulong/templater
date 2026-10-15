@@ -82,6 +82,9 @@ describe('templater.html JavaScript', () => {
 
   beforeAll(async () => {
     window = await loadTemplater();
+    const dialog = window.document.getElementById('myDialog');
+    dialog.show = function () { this.setAttribute('open', ''); };
+    dialog.close = function () { this.removeAttribute('open'); };
   });
 
   it('loads templater functions', () => {
@@ -170,24 +173,71 @@ describe('templater.html JavaScript', () => {
     expect(folder.classList.contains('hidden-folder')).toBe(false);
   });
 
-  it('promptReplaceSquare prompts for placeholders and stores them in local storage', () => {
+  it('promptReplaceSquare waits for modal input and stores the response', async () => {
     window.globalData.lsData = {};
     window.localStorage.clear();
 
-    const originalPrompt = window.prompt;
-    const promptMock = jest.fn().mockReturnValue('Alice');
-    window.prompt = promptMock;
+    const resultPromise = window.promptReplaceSquare('Hello [name]');
+    const dialog = window.document.getElementById('myDialog');
+    const input = dialog.querySelector('#dialogInput');
 
-    try {
-      const result = window.promptReplaceSquare('Hello [name]');
+    expect(dialog.open).toBe(true);
+    expect(dialog.querySelector('#dialogPrompt').textContent).toBe('[name]');
+    expect(input.value).toBe('');
 
-      expect(promptMock).toHaveBeenCalledWith('[name]', '');
-      expect(result).toBe('Hello Alice');
-      expect(window.globalData.lsData['[name]']).toBe('Alice');
-      expect(window.localStorage.getItem('templaterLS')).toBe(JSON.stringify({ '[name]': 'Alice' }));
-    } finally {
-      window.prompt = originalPrompt;
-    }
+    input.value = 'Alice';
+    dialog.querySelector('.dialog-content').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+
+    await expect(resultPromise).resolves.toBe('Hello Alice');
+    expect(dialog.open).toBe(false);
+    expect(window.globalData.lsData['[name]']).toBe('Alice');
+    expect(window.localStorage.getItem('templaterLS')).toBe(JSON.stringify({ '[name]': 'Alice' }));
+  });
+
+  it('dialog can be dragged by its title bar', () => {
+    const dialog = window.document.getElementById('myDialog');
+    const titlebar = dialog.querySelector('#dialogTitlebar');
+    const rect = { left: 100, top: 80, width: 300, height: 200 };
+    jest.spyOn(dialog, 'getBoundingClientRect').mockReturnValue({
+      ...rect,
+      right: rect.left + rect.width,
+      bottom: rect.top + rect.height,
+      x: rect.left,
+      y: rect.top,
+      toJSON: () => ({}),
+    });
+    dialog.show();
+
+    titlebar.dispatchEvent(new window.MouseEvent('pointerdown', {
+      bubbles: true,
+      button: 0,
+      clientX: 120,
+      clientY: 90,
+    }));
+    window.dispatchEvent(new window.MouseEvent('pointermove', {
+      pointerId: undefined,
+      clientX: 170,
+      clientY: 130,
+    }));
+    window.dispatchEvent(new window.MouseEvent('pointerup'));
+
+    expect(dialog.style.left).toBe('150px');
+    expect(dialog.style.top).toBe('120px');
+    dialog.close();
+    dialog.style.left = '';
+    dialog.style.top = '';
+    dialog.style.transform = '';
+    dialog.getBoundingClientRect.mockRestore();
+  });
+
+  it('promptReplaceSquare stops when the modal is cancelled', async () => {
+    window.globalData.lsData = {};
+
+    const resultPromise = window.promptReplaceSquare('Hello [name]');
+    window.document.querySelector('.dialog-cancel').click();
+
+    await expect(resultPromise).resolves.toBe(false);
+    expect(window.globalData.lsData).toEqual({});
   });
 
   it('parseLsData loads persisted values into globalData', () => {
