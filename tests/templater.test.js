@@ -145,6 +145,46 @@ describe('templater.html JavaScript', () => {
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify({ x: 'y' }, null, 2));
   });
 
+  it('clickLabel resolves nested curly and square placeholders without changing the registered object', async () => {
+    window.navigator.clipboard = { writeText: jest.fn().mockResolvedValue() };
+    window.globalData.lsData = { '[host]': 'example.com' };
+    const registeredObject = {
+      name: 'Ada',
+      profile: { greeting: 'Hello {city} at [host]' },
+      entries: ['{name} [host]', { label: 'Welcome, {name}' }],
+    };
+    const originalObject = JSON.stringify(registeredObject);
+    const uuid = window.addToRegistry(registeredObject, { city: 'Paris' });
+    const clickEvent = new window.MouseEvent('click', { metaKey: true });
+
+    await window.clickLabel(clickEvent, uuid);
+
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify({
+      name: 'Ada',
+      profile: { greeting: 'Hello Paris at example.com' },
+      entries: ['Ada example.com', { label: 'Welcome, Ada' }],
+    }, null, 2));
+    expect(JSON.stringify(window.globalData.registry.get(uuid))).toBe(originalObject);
+  });
+
+  it('clickLabel resolves inherited values from an object rendered through nested folders', async () => {
+    window.navigator.clipboard = { writeText: jest.fn().mockResolvedValue() };
+    window.globalData.lsData = { '[host]': 'example.com' };
+    const source = {
+      username: 'Mira',
+      profile: { details: { greeting: 'Hello {username} at [host]' } },
+    };
+    window.displayObj(source, [], true);
+    const [uuid] = [...window.globalData.registry.entries()]
+      .find(([, registeredObject]) => registeredObject.profile === source.profile);
+
+    await window.clickLabel(new window.MouseEvent('click', { metaKey: true }), uuid);
+
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify({
+      profile: { details: { greeting: 'Hello Mira at example.com' } },
+    }, null, 2));
+  });
+
   it('toggleFolder toggles folder class and copies object with meta key', async () => {
     const uuid = window.addToRegistry({ foo: 'bar' });
     const folder = window.document.createElement('div');
@@ -159,6 +199,24 @@ describe('templater.html JavaScript', () => {
 
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify({ foo: 'bar' }, null, 2));
     expect(folder.classList.contains('hidden-folder')).toBe(true);
+  });
+
+  it('toggleFolder resolves placeholders in copied objects without changing the registry entry', async () => {
+    window.navigator.clipboard = { writeText: jest.fn().mockResolvedValue() };
+    window.globalData.lsData = { '[host]': 'example.com' };
+    const registeredObject = { folder: { greeting: 'Hello {name} at [host]' } };
+    const originalObject = JSON.stringify(registeredObject);
+    const uuid = window.addToRegistry(registeredObject, { name: 'Mira' });
+    const folder = window.document.createElement('div');
+    folder.dataset.uuid = uuid;
+    window.document.body.appendChild(folder);
+
+    await window.toggleFolder(new window.MouseEvent('click', { metaKey: true }), uuid);
+
+    expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify({
+      folder: { greeting: 'Hello Mira at example.com' },
+    }, null, 2));
+    expect(JSON.stringify(window.globalData.registry.get(uuid))).toBe(originalObject);
   });
 
   it('toggleFolder toggles the folder class without the meta key', () => {

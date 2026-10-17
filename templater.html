@@ -605,9 +605,10 @@ const replaceCurly = (value, context = {}) => {
   return result;
 };
 
-const addToRegistry = (obj) => {
+const addToRegistry = (obj, context = {}) => {
   const entryUUID = createUID();
   globalData.registry.set(entryUUID, obj);
+  globalData.registryContexts.set(entryUUID, context);
   return entryUUID;
 };
 
@@ -615,7 +616,7 @@ const displayArrayValue = (key, value, currentContext) => {
   const itemList = [];
   
   // Register the array itself and display it as an item header
-  const entryUUID = addToRegistry({[key]: value});
+  const entryUUID = addToRegistry({[key]: value}, currentContext);
   itemList.push(displayItem(key, '', entryUUID, currentContext, { hideCopyButton: true }));
 
   // Build a context that merges all object properties from array elements
@@ -634,7 +635,7 @@ const displayArrayValue = (key, value, currentContext) => {
       const childItems = displayObj(elm, [], false, siblingContext);
       childrenList.push(...childItems);
     } else {
-      const elmUUID = addToRegistry({ '': elm });
+      const elmUUID = addToRegistry({ '': elm }, siblingContext);
       childrenList.push(displayItem('', elm, elmUUID, siblingContext));
     }
   });
@@ -648,12 +649,12 @@ const displayObjectValue = (key, value, currentContext) => {
   const children = displayObj(value, [], false, currentContext);
   
   // Register the object and wrap it in a folder
-  const folderUUID = addToRegistry({[key]: value});
+  const folderUUID = addToRegistry({[key]: value}, currentContext);
   return displayFolder(key, children.join(""), folderUUID);
 };
 
 const displayPrimitiveValue = (key, value, currentContext) => {
-  const entryUUID = addToRegistry({[key]: value});
+  const entryUUID = addToRegistry({[key]: value}, currentContext);
   return displayItem(key, value, entryUUID, currentContext);
 };
 
@@ -692,7 +693,9 @@ const toggleFolder = (event, uuid) => {
 
     const registeredObj = globalData.registry.get(uuid);
     if (registeredObj) {
-      const jsonText = JSON.stringify(registeredObj, null, 2);
+      const context = globalData.registryContexts.get(uuid) ?? {};
+      const resolvedObj = resolveObjectReplacements(registeredObj, context);
+      const jsonText = JSON.stringify(resolvedObj, null, 2);
       navigator.clipboard.writeText(jsonText);
       showToast("Folder object copied!", "success");
     } else {
@@ -717,9 +720,39 @@ const clickLabel = (event, uuid) => {
     return;
   }
 
-  const jsonText = JSON.stringify(registeredObj, null, 2);
+  const context = globalData.registryContexts.get(uuid) ?? {};
+  const resolvedObj = resolveObjectReplacements(registeredObj, context);
+  const jsonText = JSON.stringify(resolvedObj, null, 2);
   navigator.clipboard.writeText(jsonText);
   showToast("Object copied!", "success");
+};
+
+const resolveObjectReplacements = (value, context = {}) => {
+  if (typeof value === "string") {
+    return replaceSquare(replaceCurly(value, context));
+  }
+
+  if (Array.isArray(value)) {
+    const siblingContext = { ...context };
+    value.forEach((element) => {
+      if (element !== null && typeof element === "object") {
+        Object.assign(siblingContext, element);
+      }
+    });
+    return value.map((element) => resolveObjectReplacements(element, siblingContext));
+  }
+
+  if (value !== null && typeof value === "object") {
+    const currentContext = { ...context, ...value };
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [
+        key,
+        resolveObjectReplacements(child, currentContext),
+      ]),
+    );
+  }
+
+  return value;
 };
 
 const promptReplaceSquare = async (link) => {
@@ -1078,6 +1111,7 @@ const showData = (data) => {
   searchSection.classList.remove("hidden");
 
   globalData.registry.clear();
+  globalData.registryContexts.clear();
 
   const display = displayObj(data, [], true);
   if (globalData.filteredList && Object.keys(globalData.filteredList).length > 0) {
@@ -1255,6 +1289,7 @@ const globalData = {
   lsData: {},
   filteredList: {},
   registry: new Map(),
+  registryContexts: new Map(),
 }
 
 resetView();
